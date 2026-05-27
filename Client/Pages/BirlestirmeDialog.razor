@@ -1,0 +1,36 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h5" Align="Align.Center" Style="margin-top: 10px;">Modül Birleştirme Ayarları</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div style="padding: 10px 20px;">
+            <MudText Typo="Typo.h6" Class="mb-1">Gövde Birleştirme (Sistem Tipi)</MudText>
+            <MudSelect T="string" Label="Gövde için sistem tipi seçin" @bind-Value="GovdeSistemTipi" Variant="Variant.Text" Class="mb-4">
+                <MudSelectItem Value="@("MİNİFİKS")">MİNİFİKS</MudSelectItem>
+                <MudSelectItem Value="@("KAVELA")">KAVELA</MudSelectItem>
+                <MudSelectItem Value="@("VİDA")">VİDA</MudSelectItem>
+            </MudSelect>
+
+            <MudText Typo="Typo.h6" Class="mb-1">Dikme Birleştirme (Sistem Tipi)</MudText>
+            <MudSelect T="string" Label="Dikme için sistem tipi seçin" @bind-Value="DikmeSistemTipi" Variant="Variant.Text" Class="mb-4">
+                <MudSelectItem Value="@("MİNİFİKS")">MİNİFİKS</MudSelectItem>
+                <MudSelectItem Value="@("KAVELA")">KAVELA</MudSelectItem>
+                <MudSelectItem Value="@("VİDA")">VİDA</MudSelectItem>
+            </MudSelect>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">İPTAL</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit" Style="background-color: #673ab7; padding: 8px 30px;">TAMAM</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string GovdeSistemTipi { get; set; } = "MİNİFİKS";
+    [Parameter] public string DikmeSistemTipi { get; set; } = "MİNİFİKS";
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok((GovdeSistemTipi, DikmeSistemTipi)));
+    private void Cancel() => MudDialog.Cancel();
+}

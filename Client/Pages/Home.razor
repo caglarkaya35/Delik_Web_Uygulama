@@ -1,0 +1,1411 @@
+@page "/"
+@using System.Globalization
+@using Shared.Modeller
+@using System.Text.Json
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>DelikPro – Mobilya Modülü</PageTitle>
+
+<div class="ana-ekran">
+
+    <!-- ÜST MENÜ ÇUBUĞU -->
+    <header class="ust-menu">
+        <span class="logo-metin">◼ DelikPro</span>
+        <nav class="menu-nav">
+            <button class="menu-btn @(aktifMenu == "tasarim" ? "aktif" : "")"
+                    @onclick='() => aktifMenu = "tasarim"'>TASARIM</button>
+            <button class="menu-btn @(aktifMenu == "imalat" ? "aktif" : "")"
+                    @onclick='() => aktifMenu = "imalat"'>İMALAT / GÖRÜNÜM</button>
+            <button class="menu-btn @(aktifMenu == "veritabani" ? "aktif" : "")"
+                    @onclick='() => aktifMenu = "veritabani"'>VERİTABANI</button>
+            <button class="menu-btn @(aktifMenu == "yardim" ? "aktif" : "")"
+                    @onclick='() => aktifMenu = "yardim"'>YARDIM</button>
+        </nav>
+    </header>
+
+    <!-- ORTA: SOL PANEL + ÇİZİM ALANI -->
+    <div class="orta-alan">
+
+        @if (aktifMenu == "veritabani")
+        {
+        <aside class="veritabani-sol">
+            <p class="sol-baslik">VERİTABANI</p>
+            <button class="veritabani-btn @(seciliVeritabaniKategorisi == "proje" ? "aktif" : "")" @onclick='() => seciliVeritabaniKategorisi = "proje"'>
+                <MudIcon Icon="@Icons.Material.Filled.AccountTree" Size="Size.Small"/>
+                <span>Proje Yönetimi</span>
+            </button>
+            <button class="veritabani-btn @(seciliVeritabaniKategorisi == "takim" ? "aktif" : "")" @onclick='() => seciliVeritabaniKategorisi = "takim"'>
+                <MudIcon Icon="@Icons.Material.Filled.Build" Size="Size.Small"/>
+                <span>Takım Ayarları</span>
+            </button>
+            <button class="veritabani-btn @(seciliVeritabaniKategorisi == "birlestirme" ? "aktif" : "")" @onclick='() => seciliVeritabaniKategorisi = "birlestirme"'>
+                <MudIcon Icon="@Icons.Material.Filled.CallMerge" Size="Size.Small"/>
+                <span>Birleştirme Ayarları</span>
+            </button>
+            <button class="veritabani-btn @(seciliVeritabaniKategorisi == "makine" ? "aktif" : "")" @onclick='() => seciliVeritabaniKategorisi = "makine"'>
+                <MudIcon Icon="@Icons.Material.Filled.PrecisionManufacturing" Size="Size.Small"/>
+                <span>Makine Ayarları</span>
+            </button>
+            <button class="veritabani-btn @(seciliVeritabaniKategorisi == "parca" ? "aktif" : "")" @onclick='() => seciliVeritabaniKategorisi = "parca"'>
+                <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Small"/>
+                <span>Parça Bilgileri</span>
+            </button>
+            <button class="veritabani-btn @(seciliVeritabaniKategorisi == "koordinat" ? "aktif" : "")" @onclick='() => seciliVeritabaniKategorisi = "koordinat"'>
+                <MudIcon Icon="@Icons.Material.Filled.BlurCircular" Size="Size.Small"/>
+                <span>Parça Delik Koordinatları</span>
+            </button>
+            <button class="veritabani-btn @(seciliVeritabaniKategorisi == "rafpimi" ? "aktif" : "")" @onclick='() => seciliVeritabaniKategorisi = "rafpimi"'>
+                <MudIcon Icon="@Icons.Material.Filled.LinearScale" Size="Size.Small"/>
+                <span>Raf Pimi Ayarları</span>
+            </button>
+            <button class="veritabani-btn @(seciliVeritabaniKategorisi == "gkodu" ? "aktif" : "")" @onclick='() => seciliVeritabaniKategorisi = "gkodu"'>
+                <MudIcon Icon="@Icons.Material.Filled.FileDownload" Size="Size.Small"/>
+                <span>G Kodu Çıkarılan Parçalar</span>
+            </button>
+        </aside>
+        
+        <main class="imalat-icerik">
+            @if (seciliVeritabaniKategorisi == "takim")
+            {
+                <div class="takim-tablo-konteyner">
+                    <div class="takim-ust-baslik">
+                        <h2>TAKIM AYARLARI VERİTABANI</h2>
+                    </div>
+                    <div class="takim-liste-serit">TAKIM LİSTESİ</div>
+                    <div class="takim-tablo-sarmal" style="border-radius:0">
+                        <table class="takim-tablo">
+                            <thead>
+                                <tr>
+                                    <th>TAKIM NO</th>
+                                    <th>TAKIM ADI</th>
+                                    <th>TAKIM TİPİ</th>
+                                    <th>ÇAP</th>
+                                    <th>XY DALMA HIZI</th>
+                                    <th>Z DALMA HIZI</th>
+                                    <th>XY İLERLEME HIZI</th>
+                                    <th>Z İLERLEME HIZI</th>
+                                    <th>X OFSET</th>
+                                    <th>Y OFSET</th>
+                                    <th>Z OFSET</th>
+                                    <th>TAKIM UZUNL.</th>
+                                    <th>PİSTON AÇMA</th>
+                                    <th>PİSTON KAPAT</th>
+                                    <th style="width:50px">İŞLEM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var t in takimlar)
+                                {
+                                    <tr>
+                                        <td class="sayi-kolon">
+                                            <MudNumericField @bind-Value="t.No" Margin="Margin.Dense" Variant="Variant.Text" HideSpinButtons="true" Class="tablo-input" OnBlur="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="t.Ad" Margin="Margin.Dense" Variant="Variant.Text" Class="tablo-input" OnBlur="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="t.Tip" Margin="Margin.Dense" Variant="Variant.Text" Class="tablo-input" OnBlur="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudNumericField @bind-Value="t.Cap" Margin="Margin.Dense" Variant="Variant.Text" HideSpinButtons="true" Class="tablo-input" OnBlur="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudNumericField @bind-Value="t.XYDalmaHizi" Margin="Margin.Dense" Variant="Variant.Text" HideSpinButtons="true" Class="tablo-input" OnBlur="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudNumericField @bind-Value="t.ZDalmaHizi" Margin="Margin.Dense" Variant="Variant.Text" HideSpinButtons="true" Class="tablo-input" OnBlur="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudNumericField @bind-Value="t.XYIlerlemeHizi" Margin="Margin.Dense" Variant="Variant.Text" HideSpinButtons="true" Class="tablo-input" OnBlur="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudNumericField @bind-Value="t.ZIlerlemeHizi" Margin="Margin.Dense" Variant="Variant.Text" HideSpinButtons="true" Class="tablo-input" OnBlur="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudNumericField @bind-Value="t.XOfset" Margin="Margin.Dense" Variant="Variant.Text" HideSpinButtons="true" Class="tablo-input" OnBlur="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudNumericField @bind-Value="t.YOfset" Margin="Margin.Dense" Variant="Variant.Text" HideSpinButtons="true" Class="tablo-input" OnBlur="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudNumericField @bind-Value="t.ZOfset" Margin="Margin.Dense" Variant="Variant.Text" HideSpinButtons="true" Class="tablo-input" OnBlur="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudNumericField @bind-Value="t.Uzunluk" Margin="Margin.Dense" Variant="Variant.Text" HideSpinButtons="true" Class="tablo-input" OnBlur="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="t.PistonAcma" Margin="Margin.Dense" Variant="Variant.Text" Class="tablo-input" OnBlur="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="t.PistonKapat" Margin="Margin.Dense" Variant="Variant.Text" Class="tablo-input" OnBlur="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="() => TakimSil(t)" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="takim-alt-kontrol">
+                        <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" OnClick="TakimEkle">YENİ EKLE</MudButton>
+                        <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Success" OnClick="VeritabaniniKaydet">VERİTABANINI KAYDET</MudButton>
+                    </div>
+                </div>
+            }
+            else if (seciliVeritabaniKategorisi == "birlestirme")
+            {
+                <div class="takim-tablo-konteyner">
+                    <div class="takim-ust-baslik" style="text-align: left; padding-left: 0;">
+                        <h2 style="font-size: 24px; color: #444;">Birleştirme Ayarları</h2>
+                    </div>
+
+                    <div class="birlestirme-ust-form">
+                        <div class="birlestirme-form-satir">
+                            <div class="birlestirme-form-alan">
+                                <MudSelect T="string" Label="Sistem Tipi" @bind-Value="yeniBirlestirme.SistemTipi" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                    <MudSelectItem Value="@("MİNİFİKS")">MİNİFİKS</MudSelectItem>
+                                    <MudSelectItem Value="@("VİDA")">VİDA</MudSelectItem>
+                                    <MudSelectItem Value="@("RAF PİMİ")">RAF PİMİ</MudSelectItem>
+                                </MudSelect>
+                            </div>
+                            <div class="birlestirme-form-alan">
+                                <MudSelect T="string" Label="Kullanım Alanı" @bind-Value="yeniBirlestirme.KullanimAlani" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                    <MudSelectItem Value="@("GÖVDE")">GÖVDE</MudSelectItem>
+                                    <MudSelectItem Value="@("RAF")">RAF</MudSelectItem>
+                                    <MudSelectItem Value="@("DİKME")">DİKME</MudSelectItem>
+                                </MudSelect>
+                            </div>
+                            <div class="birlestirme-form-alan">
+                                <MudSelect T="string" Label="İşlem Tipi" @bind-Value="yeniBirlestirme.IslemTipi" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                    <MudSelectItem Value="@("ÇANAK")">ÇANAK</MudSelectItem>
+                                    <MudSelectItem Value="@("YATAY MİL")">YATAY MİL</MudSelectItem>
+                                    <MudSelectItem Value="@("YATAY DÜBEL")">YATAY DÜBEL</MudSelectItem>
+                                    <MudSelectItem Value="@("YÜZEY MİL")">YÜZEY MİL</MudSelectItem>
+                                    <MudSelectItem Value="@("YÜZEY DÜBEL")">YÜZEY DÜBEL</MudSelectItem>
+                                    <MudSelectItem Value="@("RAF_PİMİ")">RAF_PİMİ</MudSelectItem>
+                                </MudSelect>
+                            </div>
+                        </div>
+                        <div class="birlestirme-form-satir">
+                            <div class="birlestirme-form-alan">
+                                <MudNumericField T="double" Label="Çapı" @bind-Value="yeniBirlestirme.Capi" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" />
+                            </div>
+                            <div class="birlestirme-form-alan">
+                                <MudNumericField T="double" Label="Derinlik" @bind-Value="yeniBirlestirme.Derinlik" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" />
+                            </div>
+                            <div class="birlestirme-form-alan">
+                                <MudNumericField T="double" Label="X Ofset" @bind-Value="yeniBirlestirme.XOfset" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" />
+                            </div>
+                        </div>
+                        <div class="birlestirme-form-satir">
+                            <div class="birlestirme-form-alan">
+                                <MudNumericField T="double" Label="Y Ofset" @bind-Value="yeniBirlestirme.YOfset" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" />
+                            </div>
+                            <div class="birlestirme-form-alan">
+                                <MudNumericField T="double" Label="Z Ofset" @bind-Value="yeniBirlestirme.ZOfset" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" />
+                            </div>
+                            <div class="birlestirme-form-alan" style="display:flex; align-items:flex-end; justify-content:flex-end; gap:8px;">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="BirlestirmeEkle" Size="Size.Small" Style="background-color: #673ab7; color: white;">Ekle</MudButton>
+                                <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="VeritabaniniKaydet" Size="Size.Small" Style="background-color: #673ab7; color: white;">Güncelle</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Error" OnClick="BirlestirmeFormdanSil" Size="Size.Small">Sil</MudButton>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="birlestirme-tablo-sarmal">
+                        <table class="takim-tablo">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Sistem Tipi</th>
+                                    <th>Kullanım Alanı</th>
+                                    <th>İşlem Tipi</th>
+                                    <th>Çapı</th>
+                                    <th>Derinlik</th>
+                                    <th>X Ofset</th>
+                                    <th>Y Ofset</th>
+                                    <th>Z Ofset</th>
+                                    <th style="width:50px">İŞLEM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var b in birlestirmeler)
+                                {
+                                    <tr @onclick="() => BirlestirmeSec(b)" style="cursor: pointer; background: @(seciliBirlestirmeId == b.Id ? "#f3e5f5" : "transparent")">
+                                        <td>@b.Id</td>
+                                        <td>@b.SistemTipi</td>
+                                        <td>@b.KullanimAlani</td>
+                                        <td>@b.IslemTipi</td>
+                                        <td>@b.Capi.ToString("F2")</td>
+                                        <td>@b.Derinlik.ToString("F2")</td>
+                                        <td>@b.XOfset.ToString("F2")</td>
+                                        <td>@b.YOfset.ToString("F2")</td>
+                                        <td>@b.ZOfset.ToString("F2")</td>
+                                        <td>
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="() => BirlestirmeSil(b)" OnClick:stopPropagation="true" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+            else if (seciliVeritabaniKategorisi == "makine")
+            {
+                <div class="takim-tablo-konteyner">
+                    <div class="takim-ust-baslik" style="text-align: left; padding-left: 0;">
+                        <h2 style="font-size: 24px; color: #444;">Makina Ayarları</h2>
+                    </div>
+
+                    <div class="takim-tablo-sarmal" style="border-radius: 8px;">
+                        <table class="takim-tablo">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Makina Adı</th>
+                                    <th>X Ekseni Limiti (mm)</th>
+                                    <th>Y Ekseni Limiti (mm)</th>
+                                    <th>Emniyet Mesafesi (mm)</th>
+                                    <th>Hız</th>
+                                    <th style="width:50px">İŞLEM</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var m in makineler)
+                                {
+                                    <tr>
+                                        <td>
+                                            <MudNumericField @bind-Value="m.Id" Margin="Margin.Dense" Variant="Variant.Text" HideSpinButtons="true" Class="tablo-input" @bind-Value:after="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudTextField @bind-Value="m.Ad" Margin="Margin.Dense" Variant="Variant.Text" Class="tablo-input" @bind-Value:after="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudNumericField @bind-Value="m.XEkseniLimiti" Margin="Margin.Dense" Variant="Variant.Text" HideSpinButtons="true" Class="tablo-input" @bind-Value:after="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudNumericField @bind-Value="m.YEkseniLimiti" Margin="Margin.Dense" Variant="Variant.Text" HideSpinButtons="true" Class="tablo-input" @bind-Value:after="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudNumericField @bind-Value="m.EmniyetMesafesi" Margin="Margin.Dense" Variant="Variant.Text" HideSpinButtons="true" Class="tablo-input" @bind-Value:after="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudNumericField @bind-Value="m.Hiz" Margin="Margin.Dense" Variant="Variant.Text" HideSpinButtons="true" Class="tablo-input" @bind-Value:after="VeritabaniniKaydet" />
+                                        </td>
+                                        <td>
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="() => MakineSil(m)" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="takim-alt-kontrol" style="background: transparent; border: none; padding-right: 0;">
+                        <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" OnClick="MakineEkle" Size="Size.Small" Style="background-color: #7b1fa2;">YENİ EKLE</MudButton>
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="VeritabaniniKaydet" Size="Size.Small" Style="background-color: #7b1fa2;">Kaydet</MudButton>
+                    </div>
+                </div>
+            }
+            else if (seciliVeritabaniKategorisi == "rafpimi")
+            {
+                <div class="takim-tablo-konteyner">
+                    <div class="takim-ust-baslik" style="text-align: left; padding-left: 0;">
+                        <h2 style="font-size: 24px; color: #444;">Raf Pimi Ayarları</h2>
+                    </div>
+
+                    <div class="birlestirme-ust-form">
+                        <div class="birlestirme-form-satir">
+                            <div class="birlestirme-form-alan">
+                                <MudNumericField Label="Dikey Aralık Limiti (mm)" @bind-Value="rafPimiAyari.DikeyAralikLimiti" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" />
+                            </div>
+                            <div class="birlestirme-form-alan">
+                                <MudNumericField Label="Ön Kenar Ofset (mm)" @bind-Value="rafPimiAyari.OnKenarOfset" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" />
+                            </div>
+                        </div>
+                        <div class="birlestirme-form-satir">
+                            <div class="birlestirme-form-alan">
+                                <MudNumericField Label="Arka Kenar Ofset (mm)" @bind-Value="rafPimiAyari.ArkaKenarOfset" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" />
+                            </div>
+                            <div class="birlestirme-form-alan">
+                                <MudNumericField Label="Delik Çapı (mm)" @bind-Value="rafPimiAyari.DelikCapi" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" />
+                            </div>
+                        </div>
+                        <div class="birlestirme-form-satir">
+                            <div class="birlestirme-form-alan">
+                                <MudNumericField Label="Delik Derinliği (mm)" @bind-Value="rafPimiAyari.DelikDerinligi" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" />
+                            </div>
+                            <div class="birlestirme-form-alan">
+                                <MudSelect T="string" Label="Yerleşim Tipi" @bind-Value="rafPimiAyari.YerlesimTipi" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                    <MudSelectItem Value="@("Raf Konumuna Göre")">Raf Konumuna Göre</MudSelectItem>
+                                    <MudSelectItem Value="@("Eşit Aralıklı")">Eşit Aralıklı</MudSelectItem>
+                                </MudSelect>
+                            </div>
+                        </div>
+                        <div class="birlestirme-form-satir">
+                            <div class="birlestirme-form-alan">
+                                <MudNumericField Label="Delik Sırası Adedi" @bind-Value="rafPimiAyari.DelikSirasiAdedi" Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" />
+                            </div>
+                            <div class="birlestirme-form-alan" style="display:flex; align-items:flex-end; justify-content:flex-end;">
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="VeritabaniniKaydet" Style="background-color: #7b1fa2;">Kaydet</MudButton>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <p>Sol panelden bir kategori seçin</p>
+            }
+        </main>
+        }
+        else
+        {
+        @if (aktifMenu == "imalat")
+        {
+        <aside class="imalat-sol">
+            <p class="sol-baslik">İMALAT</p>
+            <button class="imalat-btn" @onclick="PatlatilmisGorunumuBaslat">
+                <MudIcon Icon="@Icons.Material.Filled.Engineering" Size="Size.Large"/>
+                <span>İmalat Resmi Oluştur</span>
+            </button>
+            <div class="sol-ayrac"></div>
+            <button class="imalat-btn">
+                <MudIcon Icon="@Icons.Material.Filled.QrCode" Size="Size.Large"/>
+                <span>Barkod Oluştur</span>
+            </button>
+            <div class="sol-ayrac"></div>
+            <button class="imalat-btn">
+                <MudIcon Icon="@Icons.Material.Filled.GridOn" Size="Size.Large"/>
+                <span>Nesting Yap</span>
+            </button>
+            <div class="sol-ayrac"></div>
+            <button class="imalat-btn">
+                <MudIcon Icon="@Icons.Material.Filled.Code" Size="Size.Large"/>
+                <span>G Kodu Simülasyon Yap</span>
+            </button>
+        </aside>
+        }
+        else
+        {
+        <!-- SOL PANEL -->
+        <aside class="sol-panel">
+            <div class="sol-kaydet-ac">
+                <MudTooltip Text="Kaydet" Placement="Placement.Right">
+                    <MudIconButton Icon="@Icons.Material.Filled.Save"
+                                   Size="Size.Small" OnClick="KaydetTiklandi"
+                                   Class="sol-ikon-btn" />
+                </MudTooltip>
+                <MudTooltip Text="Aç" Placement="Placement.Right">
+                    <MudIconButton Icon="@Icons.Material.Filled.FolderOpen"
+                                   Size="Size.Small" OnClick="AcTiklandi"
+                                   Class="sol-ikon-btn" />
+                </MudTooltip>
+            </div>
+            <div class="sol-ayrac" style="margin:0 12px 6px"></div>
+            <p class="sol-baslik">ARAÇLAR</p>
+
+            <button class="sol-btn" @onclick="RafEkle">
+                <MudIcon Icon="@Icons.Material.Filled.TableRows" Size="Size.Small" />
+                Raf Ekle
+            </button>
+            <button class="sol-btn" @onclick="DikmeEkle">
+                <MudIcon Icon="@Icons.Material.Filled.ViewColumn" Size="Size.Small" />
+                Dikme Ekle
+            </button>
+
+            @if (rafSayisi > 0 || dikmeSayisi > 0)
+            {
+                <div class="sol-ayrac"></div>
+                <p class="sol-bilgi">Raf: <strong>@rafSayisi</strong></p>
+                <p class="sol-bilgi">Dikme: <strong>@dikmeSayisi</strong></p>
+                <button class="sol-btn sol-sil" @onclick="Temizle">
+                    <MudIcon Icon="@Icons.Material.Filled.DeleteSweep" Size="Size.Small" />
+                    Temizle
+                </button>
+            }
+        </aside>
+        }
+
+        <!-- ÇİZİM ALANI -->
+        <main class="cizim-kap" style="position:relative">
+            @if (patlatmaFaktoru > 0)
+            {
+                <div class="imalat-islem-bar">
+                    <button class="imalat-islem-btn btn-db-kaydet">VERİTABANINA KAYDET</button>
+                    <button class="imalat-islem-btn btn-nest-ekle">NESTING HAVUZUNA EKLE</button>
+                    <button class="imalat-islem-btn btn-gkod-cikar">G KODU ÇIKAR</button>
+                    <button class="imalat-islem-btn btn-qr-cikar">QR KODU ÇIKAR</button>
+                    <button class="imalat-islem-btn btn-imalat-kapat" @onclick="CizimiKapat">KAPAT</button>
+                </div>
+            }
+            @if (!gorunum3D)
+            {
+            <svg viewBox="0 0 800 600"
+                 xmlns="http://www.w3.org/2000/svg"
+                 style="width:100%;height:100%;display:block"
+                 @onwheel="OnWheel2d" @onwheel:preventDefault>
+                <defs>
+                    <pattern id="kucukIzgara" width="20" height="20" patternUnits="userSpaceOnUse">
+                        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#dde5ee" stroke-width="0.5" />
+                    </pattern>
+                    <pattern id="buyukIzgara" width="100" height="100" patternUnits="userSpaceOnUse">
+                        <rect width="100" height="100" fill="url(#kucukIzgara)" />
+                        <path d="M 100 0 L 0 0 0 100" fill="none" stroke="#c4cfdb" stroke-width="1" />
+                    </pattern>
+                </defs>
+
+                <!-- Arka plan + ızgara -->
+                <rect width="800" height="600" fill="#f2f6fb" />
+                <rect width="800" height="600" fill="url(#buyukIzgara)" />
+
+                <g transform="translate(400,300) scale(@N(zoom2d)) translate(-400,-300)">
+                @{
+                    var dp  = DolapHesapla();
+                    double iX = dp.X + dp.K;
+                    double iY = dp.Y + dp.K;
+                    double iW = dp.W - dp.K * 2;
+                    double iH = dp.H - dp.K * 2;
+                    string yRot = $"rotate(-90,{N(dp.X - 38)},{N(dp.Y + dp.H / 2)})";
+                }
+
+@* ── Paneller: montaj tipine göre köşe birleşimleri ──
+                   SVG'de son çizilen öne gelir (painter's algorithm).
+                   "Dışarıda" olan panel her zaman son çizilir. *@
+
+                @if (montajTipi == "Alt-Üst İçeride")
+                {
+                    @* Üst & alt içeride → yanlar tam boy, en son çizilir *@
+                    <rect x="@N(iX)"  y="@N(dp.Y)"              width="@N(iW)"  height="@N(dp.K)" fill="#ffeb3b" stroke="#666" stroke-width="1"/>
+                    <rect x="@N(iX)"  y="@N(dp.Y+dp.H-dp.K)"   width="@N(iW)"  height="@N(dp.K)" fill="#ffeb3b" stroke="#666" stroke-width="1"/>
+                    <rect x="@N(dp.X)"           y="@N(dp.Y)"   width="@N(dp.K)" height="@N(dp.H)" fill="#e53935" stroke="#666" stroke-width="1"/>
+                    <rect x="@N(dp.X+dp.W-dp.K)" y="@N(dp.Y)"   width="@N(dp.K)" height="@N(dp.H)" fill="#e53935" stroke="#666" stroke-width="1"/>
+                }
+                else if (montajTipi == "Alt-Üst Dışarıda")
+                {
+                    @* Yanlar içeride → üst & alt tam genişlik, en son çizilir *@
+                    <rect x="@N(dp.X)"           y="@N(iY)"  width="@N(dp.K)" height="@N(dp.H-dp.K*2)" fill="#e53935" stroke="#666" stroke-width="1"/>
+                    <rect x="@N(dp.X+dp.W-dp.K)" y="@N(iY)"  width="@N(dp.K)" height="@N(dp.H-dp.K*2)" fill="#e53935" stroke="#666" stroke-width="1"/>
+                    <rect x="@N(dp.X)" y="@N(dp.Y)"            width="@N(dp.W)" height="@N(dp.K)" fill="#ffeb3b" stroke="#666" stroke-width="1"/>
+                    <rect x="@N(dp.X)" y="@N(dp.Y+dp.H-dp.K)"  width="@N(dp.W)" height="@N(dp.K)" fill="#ffeb3b" stroke="#666" stroke-width="1"/>
+                }
+                else if (montajTipi == "Alt İçeride-Üst Dışarıda")
+                {
+                    @* Alt içeride, yanlar alttan tam boya iner; üst tam genişlik son çizilir *@
+                    <rect x="@N(iX)"  y="@N(dp.Y+dp.H-dp.K)"   width="@N(iW)"  height="@N(dp.K)" fill="#ffeb3b" stroke="#666" stroke-width="1"/>
+                    <rect x="@N(dp.X)"           y="@N(iY)"  width="@N(dp.K)" height="@N(dp.H-dp.K)" fill="#e53935" stroke="#666" stroke-width="1"/>
+                    <rect x="@N(dp.X+dp.W-dp.K)" y="@N(iY)"  width="@N(dp.K)" height="@N(dp.H-dp.K)" fill="#e53935" stroke="#666" stroke-width="1"/>
+                    <rect x="@N(dp.X)" y="@N(dp.Y)"             width="@N(dp.W)" height="@N(dp.K)" fill="#ffeb3b" stroke="#666" stroke-width="1"/>
+                }
+                else
+                {
+                    @* Alt Dışarıda-Üst İçeride: üst içeride, yanlar üstten tam boya iner; alt tam genişlik son çizilir *@
+                    <rect x="@N(iX)"  y="@N(dp.Y)"              width="@N(iW)"  height="@N(dp.K)" fill="#ffeb3b" stroke="#666" stroke-width="1"/>
+                    <rect x="@N(dp.X)"           y="@N(dp.Y)"  width="@N(dp.K)" height="@N(dp.H-dp.K)" fill="#e53935" stroke="#666" stroke-width="1"/>
+                    <rect x="@N(dp.X+dp.W-dp.K)" y="@N(dp.Y)"  width="@N(dp.K)" height="@N(dp.H-dp.K)" fill="#e53935" stroke="#666" stroke-width="1"/>
+                    <rect x="@N(dp.X)" y="@N(dp.Y+dp.H-dp.K)"  width="@N(dp.W)" height="@N(dp.K)" fill="#ffeb3b" stroke="#666" stroke-width="1"/>
+                }
+
+                <!-- Dış çerçeve -->
+                <rect x="@N(dp.X)" y="@N(dp.Y)"
+                      width="@N(dp.W)" height="@N(dp.H)"
+                      fill="none" stroke="#352006" stroke-width="1.5" />
+
+                <!-- Raflar -->
+                @for (int i = 1; i <= rafSayisi; i++)
+                {
+                    double rafY = iY + (i / (double)(rafSayisi + 1)) * iH - dp.K / 2;
+                    <rect x="@N(iX)" y="@N(rafY)"
+                          width="@N(iW)" height="@N(dp.K)"
+                          fill="#c9953a" stroke="#6b4710" stroke-width="0.5" />
+                }
+
+                <!-- Dikmeler -->
+                @for (int i = 1; i <= dikmeSayisi; i++)
+                {
+                    double dikmeX = iX + (i / (double)(dikmeSayisi + 1)) * iW - dp.K / 2;
+                    <rect x="@N(dikmeX)" y="@N(iY)"
+                          width="@N(dp.K)" height="@N(iH)"
+                          fill="#c9953a" stroke="#6b4710" stroke-width="0.5" />
+                }
+
+                <!-- Genişlik ölçü çizgisi -->
+                <line x1="@N(dp.X)" y1="@N(dp.Y + dp.H + 24)"
+                      x2="@N(dp.X + dp.W)" y2="@N(dp.Y + dp.H + 24)"
+                      stroke="#5a6478" stroke-width="1.5" />
+                <line x1="@N(dp.X)" y1="@N(dp.Y + dp.H + 15)"
+                      x2="@N(dp.X)" y2="@N(dp.Y + dp.H + 33)"
+                      stroke="#5a6478" stroke-width="1.5" />
+                <line x1="@N(dp.X + dp.W)" y1="@N(dp.Y + dp.H + 15)"
+                      x2="@N(dp.X + dp.W)" y2="@N(dp.Y + dp.H + 33)"
+                      stroke="#5a6478" stroke-width="1.5" />
+                <text x="@N(dp.X + dp.W / 2)" y="@N(dp.Y + dp.H + 46)"
+                      text-anchor="middle" font-size="12" fill="#5a6478"
+                      font-family="Roboto,sans-serif">@genislik mm</text>
+
+                <!-- Yükseklik ölçü çizgisi -->
+                <line x1="@N(dp.X - 24)" y1="@N(dp.Y)"
+                      x2="@N(dp.X - 24)" y2="@N(dp.Y + dp.H)"
+                      stroke="#5a6478" stroke-width="1.5" />
+                <line x1="@N(dp.X - 15)" y1="@N(dp.Y)"
+                      x2="@N(dp.X - 33)" y2="@N(dp.Y)"
+                      stroke="#5a6478" stroke-width="1.5" />
+                <line x1="@N(dp.X - 15)" y1="@N(dp.Y + dp.H)"
+                      x2="@N(dp.X - 33)" y2="@N(dp.Y + dp.H)"
+                      stroke="#5a6478" stroke-width="1.5" />
+                <text x="@N(dp.X - 38)" y="@N(dp.Y + dp.H / 2)"
+                      text-anchor="middle" font-size="12" fill="#5a6478"
+                      font-family="Roboto,sans-serif"
+                      transform="@yRot">@yukseklik mm</text>
+
+                </g>
+                @{ double g2Sz = 36; double g2Cx = 66; double g2Cy = 546; }
+                <circle cx="@N(g2Cx)" cy="@N(g2Cy)" r="@N(g2Sz+10)" fill="rgba(255,255,255,0.7)" stroke="#c8d0dc" stroke-width="0.8"/>
+                <line x1="@N(g2Cx)" y1="@N(g2Cy)" x2="@N(g2Cx+g2Sz)" y2="@N(g2Cy)" stroke="#e53935" stroke-width="2.5" stroke-linecap="round"/>
+                <text x="@N(g2Cx+g2Sz+9)" y="@N(g2Cy+4)" font-size="10" fill="#e53935" font-family="Roboto,sans-serif" font-weight="700">X</text>
+                <line x1="@N(g2Cx)" y1="@N(g2Cy)" x2="@N(g2Cx)" y2="@N(g2Cy-g2Sz)" stroke="#43a047" stroke-width="2.5" stroke-linecap="round"/>
+                <text x="@N(g2Cx)" y="@N(g2Cy-g2Sz-7)" font-size="10" fill="#43a047" font-family="Roboto,sans-serif" font-weight="700" text-anchor="middle">Y</text>
+                <circle cx="@N(g2Cx)" cy="@N(g2Cy)" r="3" fill="#37474f"/>
+            </svg>
+            }
+            else
+            {
+            <svg viewBox="0 0 800 600"
+                 xmlns="http://www.w3.org/2000/svg"
+                 style="width:100%;height:100%;display:block;cursor:@(arrDragging?"grabbing":"grab")"
+                 @onmousedown="Md3d" @onmousemove="Mm3d" @onmouseup="Mu3d" @onmouseleave="Mu3d"
+                 @onwheel="OnWheel3d" @onwheel:preventDefault>
+                <rect width="800" height="600" fill="#f0f4f8"/>
+                <g transform="translate(400,300) scale(@N(zoom3d * (patlatmaFaktoru > 0 ? 0.7 : 1.0))) translate(-400,-300)">
+                @foreach (var yuz in Yuzler3d())
+                {
+                    <polygon points="@PtsStr(yuz)" fill="@yuz.Fill" stroke="@yuz.Stroke" stroke-width="@N(yuz.Sw)"/>
+                    
+                    @if (yuz.Delikler != null)
+                    {
+                        @foreach (var delik in yuz.Delikler)
+                        {
+                            string dRenk = delik.Tip switch {
+                                "C"  => "#1565C0",
+                                "M"  => "#E65100",
+                                "D"  => "#2E7D32",
+                                "SM" => "#6A1B9A",
+                                "SD" => "#00695C",
+                                _    => "#444"
+                            };
+                            double hr = Math.Max(delik.R, 2.5);
+                            double cl = hr * 0.65;
+                            <circle cx="@N(delik.X)" cy="@N(delik.Y)" r="@N(hr)"
+                                    fill="rgba(255,255,255,0.55)" stroke="@dRenk" stroke-width="1.2"/>
+                            <line x1="@N(delik.X-cl)" y1="@N(delik.Y)" x2="@N(delik.X+cl)" y2="@N(delik.Y)"
+                                  stroke="@dRenk" stroke-width="0.8"/>
+                            <line x1="@N(delik.X)" y1="@N(delik.Y-cl)" x2="@N(delik.X)" y2="@N(delik.Y+cl)"
+                                  stroke="@dRenk" stroke-width="0.8"/>
+                            @if (nestingFaktoru > 60)
+                            {
+                                string tipEtk = delik.Tip switch {
+                                    "C"  => "Ç",
+                                    "M"  => "YtM",
+                                    "D"  => "YtD",
+                                    "SM" => "YzM",
+                                    "SD" => "YzD",
+                                    _    => ""
+                                };
+                                <g>
+                                    <text x="@N(delik.X)" y="@N(delik.Y - hr - 1.5)"
+                                          text-anchor="middle" font-size="5.5" fill="@dRenk" font-weight="700"
+                                          style="pointer-events:none;font-family:Roboto,sans-serif">@tipEtk</text>
+                                </g>
+                            }
+                        }
+                    }
+
+                    @if (nestingFaktoru > 10)
+                    {
+                        @if (!string.IsNullOrEmpty(yuz.Label))
+                        {
+                            double tx = yuz.Xs.Average();
+                            double ty = yuz.Ys.Average();
+                            <g>
+                                <text x="@N(tx)" y="@N(ty - 5)" text-anchor="middle" font-size="14" fill="#000" font-weight="900"
+                                      style="pointer-events:none; font-family: 'Roboto', sans-serif; text-transform: uppercase;">
+                                    @yuz.Label
+                                </text>
+                                <text x="@N(tx)" y="@N(ty + 12)" text-anchor="middle" font-size="11" fill="#333"
+                                      style="pointer-events:none; font-family: 'Roboto', sans-serif; font-weight: 700;">
+                                    @N(yuz.W) x @N(yuz.H) mm
+                                </text>
+                            </g>
+                        }
+                    }
+                }
+                </g>
+                @{
+                    double gSz = 36; double gCx = 66; double gCy = 546;
+                    double cosY2 = Math.Cos(rotY3d), sinY2 = Math.Sin(rotY3d);
+                    double cosX2 = Math.Cos(rotX3d), sinX2 = Math.Sin(rotX3d);
+                    double axXsx = cosY2 * gSz,  axXsy = -sinY2 * sinX2 * gSz;
+                    double axYsx = 0,              axYsy = -cosX2 * gSz;
+                    double axZsx = sinY2 * gSz,   axZsy = cosY2 * sinX2 * gSz;
+                }
+                <circle cx="@N(gCx)" cy="@N(gCy)" r="@N(gSz+10)" fill="rgba(255,255,255,0.7)" stroke="#c8d0dc" stroke-width="0.8"/>
+                <line x1="@N(gCx)" y1="@N(gCy)" x2="@N(gCx+axXsx)" y2="@N(gCy+axXsy)" stroke="#e53935" stroke-width="2.5" stroke-linecap="round"/>
+                <text x="@N(gCx+axXsx*1.25)" y="@N(gCy+axXsy*1.25+4)" font-size="10" fill="#e53935" font-family="Roboto,sans-serif" font-weight="700" text-anchor="middle">X</text>
+                <line x1="@N(gCx)" y1="@N(gCy)" x2="@N(gCx+axYsx)" y2="@N(gCy+axYsy)" stroke="#43a047" stroke-width="2.5" stroke-linecap="round"/>
+                <text x="@N(gCx+axYsx*1.25)" y="@N(gCy+axYsy*1.25+4)" font-size="10" fill="#43a047" font-family="Roboto,sans-serif" font-weight="700" text-anchor="middle">Y</text>
+                <line x1="@N(gCx)" y1="@N(gCy)" x2="@N(gCx+axZsx)" y2="@N(gCy+axZsy)" stroke="#1565c0" stroke-width="2.5" stroke-linecap="round"/>
+                <text x="@N(gCx+axZsx*1.25)" y="@N(gCy+axZsy*1.25+4)" font-size="10" fill="#1565c0" font-family="Roboto,sans-serif" font-weight="700" text-anchor="middle">Z</text>
+                <circle cx="@N(gCx)" cy="@N(gCy)" r="3" fill="#37474f"/>
+                @if (nestingFaktoru > 80)
+                {
+                    var efSatirlar = new (string Renk, string Etiket)[] {
+                        ("#1565C0", "Ç  — Çanak"),
+                        ("#E65100", "YtM — Yatay Mil"),
+                        ("#2E7D32", "YtD — Yatay Dübel"),
+                        ("#6A1B9A", "YzM — Yüzey Mil"),
+                        ("#00695C", "YzD — Yüzey Dübel"),
+                    };
+                    double efX = 680; double efY0 = 420;
+                    <rect x="@N(efX-8)" y="@N(efY0-14)" width="118" height="@N(efSatirlar.Length*16+10)"
+                          fill="rgba(255,255,255,0.82)" stroke="#bbb" stroke-width="0.8" rx="3"/>
+                    <g>
+                        <text x="@N(efX+51)" y="@N(efY0-2)" text-anchor="middle" font-size="7.5" fill="#555"
+                              font-weight="700" font-family="Roboto,sans-serif">DELİK TİPLERİ</text>
+                    </g>
+                    @for (int ei = 0; ei < efSatirlar.Length; ei++)
+                    {
+                        double ey = efY0 + 10 + ei * 16;
+                        <circle cx="@N(efX)" cy="@N(ey)" r="4.5"
+                                fill="rgba(255,255,255,0.55)" stroke="@efSatirlar[ei].Renk" stroke-width="1.2"/>
+                        <line x1="@N(efX-3)" y1="@N(ey)" x2="@N(efX+3)" y2="@N(ey)"
+                              stroke="@efSatirlar[ei].Renk" stroke-width="0.8"/>
+                        <line x1="@N(efX)" y1="@N(ey-3)" x2="@N(efX)" y2="@N(ey+3)"
+                              stroke="@efSatirlar[ei].Renk" stroke-width="0.8"/>
+                        <g>
+                            <text x="@N(efX+10)" y="@N(ey+3.5)" font-size="8" fill="@efSatirlar[ei].Renk"
+                                  font-weight="600" font-family="Roboto,sans-serif">@efSatirlar[ei].Etiket</text>
+                        </g>
+                    }
+                }
+                <text x="400" y="22" text-anchor="middle" font-size="11" fill="#7b1fa2"
+                      font-family="Roboto,sans-serif" font-weight="700" letter-spacing="1">3D GÖRÜNÜM — fareyi sürükle: döndür</text>
+                <text x="400" y="40" text-anchor="middle" font-size="10" fill="#9c27b0"
+                      font-family="Roboto,sans-serif" font-weight="500">
+                    Bakiş: @PerspektifEtiketi() | X @N(rotX3d * 180 / Math.PI)°, Y @N(rotY3d * 180 / Math.PI)°
+                </text>
+            </svg>
+
+            <div class="view-cube-container">
+                <div class="cube-row">
+                    <button class="view-btn" @onclick='() => SetView(0, 0)'>ÖN</button>
+                    <button class="view-btn" @onclick='() => SetView(0, Math.PI)'>ARKA</button>
+                </div>
+                <div class="cube-row">
+                    <button class="view-btn" @onclick='() => SetView(0, Math.PI/2)'>SOL</button>
+                    <button class="view-btn" @onclick='() => SetView(0, -Math.PI/2)'>SAĞ</button>
+                </div>
+                <div class="cube-row">
+                    <button class="view-btn" @onclick='() => SetView(Math.PI/2, 0)'>ÜST</button>
+                    <button class="view-btn" @onclick='() => SetView(-Math.PI/2, 0)'>ALT</button>
+                </div>
+                <div class="cube-row">
+                    <button class="view-btn" style="width:102px" @onclick='() => SetView(0.5, -0.785)'>İzometrik</button>
+                </div>
+            </div>
+            }
+        </main>
+
+        <!-- SAĞ PANEL -->
+        <aside class="sag-panel">
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" FullWidth="true"
+                       Size="Size.Small"
+                       StartIcon="@(gorunum3D ? Icons.Material.Filled.CropSquare : Icons.Material.Filled.ViewInAr)"
+                       OnClick="GorunumDegistir" Class="sag-btn">
+                @(gorunum3D ? "2D GÖRÜNÜME GEÇ" : "3D GÖRÜNÜME GEÇ")
+            </MudButton>
+
+            @if (aktifMenu == "tasarim")
+            {
+            <div class="sag-ayrac"></div>
+
+            <MudButton Variant="Variant.Outlined" FullWidth="true"
+                       Size="Size.Small" StartIcon="@Icons.Material.Filled.FolderOpen"
+                       Class="sag-btn">PROJE AÇ</MudButton>
+
+            <MudButton Variant="Variant.Outlined" FullWidth="true"
+                       Size="Size.Small" StartIcon="@Icons.Material.Filled.AddBox"
+                       Class="sag-btn">YENİ MODÜL</MudButton>
+
+            <MudButton Variant="Variant.Filled" Color="Color.Success" FullWidth="true"
+                       Size="Size.Small" StartIcon="@Icons.Material.Filled.PlaylistAdd"
+                       Class="sag-btn">MODÜLÜ PROJEYE EKLE</MudButton>
+            }
+        </aside>
+        }
+    </div>
+
+    @if (aktifMenu != "imalat" && aktifMenu != "veritabani")
+    {
+    <!-- ALT BİLGİ PANELİ -->
+    <footer class="alt-panel">
+        <div class="alt-satir">
+            <div class="giris-kutu">
+                <MudNumericField T="double" @bind-Value="genislik"
+                                 Label="GENİŞLİK" Variant="Variant.Outlined"
+                                 Margin="Margin.Dense" HideSpinButtons="true"
+                                 Adornment="Adornment.End" AdornmentText="mm"
+                                 Immediate="true" Min="1" />
+            </div>
+            <div class="giris-kutu">
+                <MudNumericField T="double" @bind-Value="yukseklik"
+                                 Label="YÜKSEKLİK" Variant="Variant.Outlined"
+                                 Margin="Margin.Dense" HideSpinButtons="true"
+                                 Adornment="Adornment.End" AdornmentText="mm"
+                                 Immediate="true" Min="1" />
+            </div>
+            <div class="giris-kutu">
+                <MudNumericField T="double" @bind-Value="derinlik"
+                                 Label="DERİNLİK" Variant="Variant.Outlined"
+                                 Margin="Margin.Dense" HideSpinButtons="true"
+                                 Adornment="Adornment.End" AdornmentText="mm"
+                                 Immediate="true" Min="1" />
+            </div>
+            <div class="giris-kutu">
+                <MudNumericField T="double" @bind-Value="kalinlikMm"
+                                 Label="KALINLIK" Variant="Variant.Outlined"
+                                 Margin="Margin.Dense" HideSpinButtons="true"
+                                 Adornment="Adornment.End" AdornmentText="mm"
+                                 Immediate="true" Min="1" />
+            </div>
+            <div class="giris-kutu giris-kutu--genis">
+                <MudSelect T="string" @bind-Value="montajTipi"
+                           Label="MONTAJ TİPİ" Variant="Variant.Outlined"
+                           Margin="Margin.Dense">
+                    <MudSelectItem Value="@("Alt-Üst İçeride")">Alt-Üst İçeride</MudSelectItem>
+                    <MudSelectItem Value="@("Alt-Üst Dışarıda")">Alt-Üst Dışarıda</MudSelectItem>
+                    <MudSelectItem Value="@("Alt İçeride-Üst Dışarıda")">Alt İçeride-Üst Dışarıda</MudSelectItem>
+                    <MudSelectItem Value="@("Alt Dışarıda-Üst İçeride")">Alt Dışarıda-Üst İçeride</MudSelectItem>
+                </MudSelect>
+            </div>
+        </div>
+    </footer>
+    }
+
+</div>
+
+@code {
+    private double genislik    = 600;
+    private double yukseklik   = 720;
+    private double derinlik    = 560;
+    private double kalinlikMm  = 18;
+    private string montajTipi  = "Alt-Üst İçeride";
+    private string aktifMenu   = "tasarim";
+    private string seciliVeritabaniKategorisi = "";
+    private bool   gorunum3D   = false;
+    private int    rafSayisi   = 0;
+    private int    dikmeSayisi = 0;
+
+    private List<Takim> takimlar = new();
+    private List<Birlestirme> birlestirmeler = new();
+    private List<Makine> makineler = new();
+    private RafPimiAyari rafPimiAyari = new();
+    private Birlestirme yeniBirlestirme = new();
+    private int? seciliBirlestirmeId = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await VeritabaniniYukle();
+    }
+
+    private async Task VeritabaniniYukle()
+    {
+        try
+        {
+            var jsonTakim = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "takimlar_db");
+            if (!string.IsNullOrEmpty(jsonTakim))
+                takimlar = JsonSerializer.Deserialize<List<Takim>>(jsonTakim) ?? new();
+            else
+                VarsayilanTakimlariYukle();
+
+            var jsonBirlestirme = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "birlestirmeler_db");
+            if (!string.IsNullOrEmpty(jsonBirlestirme))
+                birlestirmeler = JsonSerializer.Deserialize<List<Birlestirme>>(jsonBirlestirme) ?? new();
+            else
+                VarsayilanBirlestirmeleriYukle();
+
+            var jsonMakine = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "makineler_db");
+            if (!string.IsNullOrEmpty(jsonMakine))
+                makineler = JsonSerializer.Deserialize<List<Makine>>(jsonMakine) ?? new();
+            else
+                VarsayilanMakineleriYukle();
+
+            var jsonRaf = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "rafpimi_db");
+            if (!string.IsNullOrEmpty(jsonRaf))
+                rafPimiAyari = JsonSerializer.Deserialize<RafPimiAyari>(jsonRaf) ?? new();
+        }
+        catch { }
+    }
+
+    private void VarsayilanTakimlariYukle()
+    {
+        takimlar = new()
+        {
+            new Takim { No = 1, Ad = "MİNİFİKS", Tip = "Y+SOL(1)", Cap = 8.00, XYDalmaHizi = 200, ZDalmaHizi = 10, XYIlerlemeHizi = 200, ZIlerlemeHizi = 5, XOfset = 261.74, YOfset = 22.04, ZOfset = -7.07, Uzunluk = -50.00, PistonAcma = "M305", PistonKapat = "M405" },
+            new Takim { No = 2, Ad = "MİNİFİKS", Tip = "Y+SAĞ(2)", Cap = 0.00, XYDalmaHizi = 200, ZDalmaHizi = 10, XYIlerlemeHizi = 200, ZIlerlemeHizi = 5, XOfset = 229.74, YOfset = 22.04, ZOfset = -7.07, Uzunluk = 0.00, PistonAcma = "M306", PistonKapat = "M406" },
+            new Takim { No = 3, Ad = "MİNİFİKS", Tip = "Y-SOL(3)", Cap = 0.00, XYDalmaHizi = 200, ZDalmaHizi = 10, XYIlerlemeHizi = 200, ZIlerlemeHizi = 5, XOfset = 261.74, YOfset = 227.04, ZOfset = -7.07, Uzunluk = 0.00, PistonAcma = "M305", PistonKapat = "M405" },
+            new Takim { No = 4, Ad = "MİNİFİKS", Tip = "Y-SAĞ(4)", Cap = 8.00, XYDalmaHizi = 200, ZDalmaHizi = 10, XYIlerlemeHizi = 200, ZIlerlemeHizi = 5, XOfset = 229.74, YOfset = 227.04, ZOfset = -7.07, Uzunluk = 0.00, PistonAcma = "M306", PistonKapat = "M406" },
+            new Takim { No = 5, Ad = "MİNİFİKS", Tip = "X-SOL(5)", Cap = 8.00, XYDalmaHizi = 200, ZDalmaHizi = 10, XYIlerlemeHizi = 200, ZIlerlemeHizi = 5, XOfset = 0.00, YOfset = 0.00, ZOfset = 0.00, Uzunluk = 60.00, PistonAcma = "M307", PistonKapat = "M407" },
+            new Takim { No = 6, Ad = "MİNİFİKS", Tip = "X-SAĞ(6)", Cap = 0.00, XYDalmaHizi = 200, ZDalmaHizi = 10, XYIlerlemeHizi = 200, ZIlerlemeHizi = 5, XOfset = 0.00, YOfset = 0.00, ZOfset = 0.00, Uzunluk = 0.00, PistonAcma = "M308", PistonKapat = "M408" },
+            new Takim { No = 7, Ad = "MİNİFİKS", Tip = "ÇANAK", Cap = 8.00, XYDalmaHizi = 200, ZDalmaHizi = 10, XYIlerlemeHizi = 200, ZIlerlemeHizi = 5, XOfset = 197.74, YOfset = 126.72, ZOfset = -7.96, Uzunluk = 60.00, PistonAcma = "M309", PistonKapat = "M409" },
+            new Takim { No = 8, Ad = "MİNİFİKS", Tip = "YÜZEY MİL", Cap = 8.00, XYDalmaHizi = 200, ZDalmaHizi = 10, XYIlerlemeHizi = 200, ZIlerlemeHizi = 5, XOfset = 165.74, YOfset = 126.72, ZOfset = -7.07, Uzunluk = 60.00, PistonAcma = "M310", PistonKapat = "M410" },
+            new Takim { No = 9, Ad = "MİNİFİKS", Tip = "YÜZEY DÜBEL", Cap = 0.00, XYDalmaHizi = 200, ZDalmaHizi = 10, XYIlerlemeHizi = 200, ZIlerlemeHizi = 5, XOfset = 133.74, YOfset = 126.72, ZOfset = -7.07, Uzunluk = 0.00, PistonAcma = "M311", PistonKapat = "M411" },
+            new Takim { No = 10, Ad = "MİNİFİKS", Tip = "FREZE(11)", Cap = 0.00, XYDalmaHizi = 200, ZDalmaHizi = 10, XYIlerlemeHizi = 200, ZIlerlemeHizi = 5, XOfset = 0.00, YOfset = 0.00, ZOfset = 0.00, Uzunluk = 0.00, PistonAcma = "M312", PistonKapat = "M412" },
+            new Takim { No = 11, Ad = "MİNİFİKS", Tip = "FREZE(12)", Cap = 0.00, XYDalmaHizi = 200, ZDalmaHizi = 10, XYIlerlemeHizi = 200, ZIlerlemeHizi = 5, XOfset = 0.00, YOfset = 0.00, ZOfset = 0.00, Uzunluk = 0.00, PistonAcma = "M313", PistonKapat = "M413" },
+            new Takim { No = 12, Ad = "MİNİFİKS", Tip = "FREZE(13)", Cap = 0.00, XYDalmaHizi = 200, ZDalmaHizi = 10, XYIlerlemeHizi = 200, ZIlerlemeHizi = 5, XOfset = 0.00, YOfset = 0.00, ZOfset = 0.00, Uzunluk = 0.00, PistonAcma = "M314", PistonKapat = "M414" },
+            new Takim { No = 13, Ad = "MİNİFİKS", Tip = "RAF PİMİ(14)", Cap = 0.00, XYDalmaHizi = 200, ZDalmaHizi = 10, XYIlerlemeHizi = 200, ZIlerlemeHizi = 5, XOfset = 5.74, YOfset = 126.72, ZOfset = -7.07, Uzunluk = 0.00, PistonAcma = "M315", PistonKapat = "M415" },
+            new Takim { No = 14, Ad = "MİNİFİKS", Tip = "RAF PİMİ(15)", Cap = 0.00, XYDalmaHizi = 200, ZDalmaHizi = 10, XYIlerlemeHizi = 200, ZIlerlemeHizi = 5, XOfset = 5.74, YOfset = 158.72, ZOfset = -7.07, Uzunluk = 0.00, PistonAcma = "M316", PistonKapat = "M416" },
+            new Takim { No = 15, Ad = "MİNİFİKS", Tip = "RAF PİMİ(16)", Cap = 0.00, XYDalmaHizi = 200, ZDalmaHizi = 10, XYIlerlemeHizi = 200, ZIlerlemeHizi = 5, XOfset = 5.74, YOfset = 191.72, ZOfset = -7.07, Uzunluk = 0.00, PistonAcma = "M317", PistonKapat = "M417" }
+        };
+    }
+
+    private void VarsayilanBirlestirmeleriYukle()
+    {
+        birlestirmeler = new()
+        {
+            new Birlestirme { Id = 1, SistemTipi = "MİNİFİKS", KullanimAlani = "GÖVDE", IslemTipi = "ÇANAK", Capi = 15.00, Derinlik = 12.50, XOfset = 28.00, YOfset = 50.00, ZOfset = 0.00 },
+            new Birlestirme { Id = 2, SistemTipi = "MİNİFİKS", KullanimAlani = "GÖVDE", IslemTipi = "YATAY MİL", Capi = 8.00, Derinlik = 10.00, XOfset = 0.00, YOfset = 50.00, ZOfset = 0.00 },
+            new Birlestirme { Id = 3, SistemTipi = "MİNİFİKS", KullanimAlani = "GÖVDE", IslemTipi = "YATAY DÜBEL", Capi = 8.00, Derinlik = 10.00, XOfset = 0.00, YOfset = 82.00, ZOfset = 0.00 },
+            new Birlestirme { Id = 4, SistemTipi = "MİNİFİKS", KullanimAlani = "GÖVDE", IslemTipi = "YÜZEY MİL", Capi = 8.00, Derinlik = 10.00, XOfset = 9.00, YOfset = 50.00, ZOfset = 0.00 },
+            new Birlestirme { Id = 5, SistemTipi = "MİNİFİKS", KullanimAlani = "GÖVDE", IslemTipi = "YÜZEY DÜBEL", Capi = 8.00, Derinlik = 10.00, XOfset = 9.00, YOfset = 82.00, ZOfset = 0.00 }
+        };
+    }
+
+    private void VarsayilanMakineleriYukle()
+    {
+        makineler = new()
+        {
+            new Makine { Id = 1, Ad = "CNC Router 1", XEkseniLimiti = 0, YEkseniLimiti = 0, EmniyetMesafesi = 0, Hiz = 0 },
+            new Makine { Id = 2, Ad = "Delik Makinası", XEkseniLimiti = 0, YEkseniLimiti = 0, EmniyetMesafesi = 0, Hiz = 0 },
+            new Makine { Id = 3, Ad = "G0 Hızı", XEkseniLimiti = 200, YEkseniLimiti = 200, EmniyetMesafesi = 0, Hiz = 5 },
+            new Makine { Id = 4, Ad = "G1 Hızı", XEkseniLimiti = 200, YEkseniLimiti = 200, EmniyetMesafesi = 0, Hiz = 10 }
+        };
+    }
+
+    private bool kayitIslemiDevamEdiyor = false;
+
+    private async Task VeritabaniniKaydet()
+    {
+        if (kayitIslemiDevamEdiyor) return;
+        
+        try 
+        {
+            kayitIslemiDevamEdiyor = true;
+
+            // Birleştirme formu seçiliyse listeyi önce güncelle
+            if (seciliBirlestirmeId != null)
+            {
+                var index = birlestirmeler.FindIndex(x => x.Id == seciliBirlestirmeId);
+                if (index != -1)
+                {
+                    birlestirmeler[index] = new Birlestirme
+                    {
+                        Id = seciliBirlestirmeId.Value,
+                        SistemTipi = yeniBirlestirme.SistemTipi,
+                        KullanimAlani = yeniBirlestirme.KullanimAlani,
+                        IslemTipi = yeniBirlestirme.IslemTipi,
+                        Capi = yeniBirlestirme.Capi,
+                        Derinlik = yeniBirlestirme.Derinlik,
+                        XOfset = yeniBirlestirme.XOfset,
+                        YOfset = yeniBirlestirme.YOfset,
+                        ZOfset = yeniBirlestirme.ZOfset
+                    };
+                }
+            }
+
+            var jsonTakim = JsonSerializer.Serialize(takimlar);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "takimlar_db", jsonTakim);
+
+            var jsonBirlestirme = JsonSerializer.Serialize(birlestirmeler);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "birlestirmeler_db", jsonBirlestirme);
+
+            var jsonMakine = JsonSerializer.Serialize(makineler);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "makineler_db", jsonMakine);
+
+            var jsonRaf = JsonSerializer.Serialize(rafPimiAyari);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "rafpimi_db", jsonRaf);
+            
+            Snackbar.Add("Veritabanı güncellendi", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Kayıt hatası: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            kayitIslemiDevamEdiyor = false;
+        }
+    }
+
+    private void TakimEkle()
+    {
+        takimlar.Add(new Takim { No = 0, Ad = "YENİ TAKIM" });
+        StateHasChanged();
+    }
+
+    private async Task TakimSil(Takim t)
+    {
+        takimlar.Remove(t);
+        await VeritabaniniKaydet();
+        StateHasChanged();
+    }
+
+    private void BirlestirmeSec(Birlestirme b)
+    {
+        seciliBirlestirmeId = b.Id;
+        yeniBirlestirme = new Birlestirme
+        {
+            Id = b.Id,
+            SistemTipi = b.SistemTipi,
+            KullanimAlani = b.KullanimAlani,
+            IslemTipi = b.IslemTipi,
+            Capi = b.Capi,
+            Derinlik = b.Derinlik,
+            XOfset = b.XOfset,
+            YOfset = b.YOfset,
+            ZOfset = b.ZOfset
+        };
+        StateHasChanged();
+    }
+
+    private async Task BirlestirmeEkle()
+    {
+        int yeniId = birlestirmeler.Any() ? birlestirmeler.Max(x => x.Id) + 1 : 1;
+        var yeni = new Birlestirme
+        {
+            Id = yeniId,
+            SistemTipi = yeniBirlestirme.SistemTipi,
+            KullanimAlani = yeniBirlestirme.KullanimAlani,
+            IslemTipi = yeniBirlestirme.IslemTipi,
+            Capi = yeniBirlestirme.Capi,
+            Derinlik = yeniBirlestirme.Derinlik,
+            XOfset = yeniBirlestirme.XOfset,
+            YOfset = yeniBirlestirme.YOfset,
+            ZOfset = yeniBirlestirme.ZOfset
+        };
+        birlestirmeler.Add(yeni);
+        seciliBirlestirmeId = null;
+        await VeritabaniniKaydet();
+        yeniBirlestirme = new Birlestirme(); // Formu sıfırla
+        StateHasChanged();
+    }
+
+    private async Task BirlestirmeSil(Birlestirme b)
+    {
+        if (b == null) return;
+        
+        birlestirmeler.Remove(b);
+        
+        if (seciliBirlestirmeId == b.Id)
+        {
+            seciliBirlestirmeId = null;
+            yeniBirlestirme = new Birlestirme();
+        }
+        
+        await VeritabaniniKaydet();
+        StateHasChanged();
+    }
+
+    private void MakineEkle()
+    {
+        makineler.Add(new Makine { Id = 0, Ad = "YENİ MAKİNE" });
+        StateHasChanged();
+    }
+
+    private async Task MakineSil(Makine m)
+    {
+        makineler.Remove(m);
+        await VeritabaniniKaydet();
+        StateHasChanged();
+    }
+
+    private async Task BirlestirmeFormdanSil()
+    {
+        if (seciliBirlestirmeId == null) return;
+        var item = birlestirmeler.FirstOrDefault(x => x.Id == seciliBirlestirmeId);
+        if (item != null)
+        {
+            await BirlestirmeSil(item);
+        }
+    }
+
+    private double zoom2d    = 1.0;
+    private double zoom3d    = 1.0;
+    private double rotX3d    =  0.615; // İzometrik X (~35.26 derece)
+    private double rotY3d    =  0.785; // İzometrik Y (45 derece)
+    private double patlatmaFaktoru = 0;
+    private double nestingFaktoru = 0;
+    private bool   arrDragging;
+    private double arrLastX, arrLastY;
+
+    private static string N(double v) =>
+        v.ToString("F2", CultureInfo.InvariantCulture);
+
+    private void GorunumDegistir() 
+    { 
+        gorunum3D = !gorunum3D;
+        if (gorunum3D)
+        {
+            rotX3d = 0.615;
+            rotY3d = 0.785;
+        }
+    }
+    private void RafEkle()   => rafSayisi++;
+    private void DikmeEkle() => dikmeSayisi++;
+    private void Temizle()   { rafSayisi = 0; dikmeSayisi = 0; }
+    private void KaydetTiklandi() { }
+    private void AcTiklandi()     { }
+
+    private string seciliGovdeSistemTipi = "MİNİFİKS";
+    private string seciliDikmeSistemTipi = "MİNİFİKS";
+
+    private async Task PatlatilmisGorunumuBaslat()
+    {
+        var parameters = new DialogParameters<BirlestirmeDialog>
+        {
+            { x => x.GovdeSistemTipi, seciliGovdeSistemTipi },
+            { x => x.DikmeSistemTipi, seciliDikmeSistemTipi }
+        };
+
+        var dialog = await DialogService.ShowAsync<BirlestirmeDialog>("", parameters);
+        var result = await dialog.Result;
+
+        if (result == null || result.Canceled) return;
+
+        if (result.Data is (string govde, string dikme))
+        {
+            seciliGovdeSistemTipi = govde;
+            seciliDikmeSistemTipi = dikme;
+        }
+
+        aktifMenu = "imalat";
+        gorunum3D = true;
+        rotX3d = 0.615;
+        rotY3d = 0.785;
+        patlatmaFaktoru = 0;
+        nestingFaktoru = 0;
+
+        // 1. Aşama: Patlatma
+        for (int i = 0; i <= 15; i++)
+        {
+            patlatmaFaktoru = i * 6;
+            StateHasChanged();
+            await Task.Delay(30);
+        }
+
+        // 2. Aşama: Üstten bakışa dön ve yere ser
+        double startX = rotX3d;
+        double startY = rotY3d;
+        for (int i = 1; i <= 20; i++)
+        {
+            double t = i / 20.0;
+            rotX3d = startX + (Math.PI / 2 - startX) * t;
+            rotY3d = startY + (0 - startY) * t;
+            nestingFaktoru = t * 100;
+            StateHasChanged();
+            await Task.Delay(30);
+        }
+    }
+    private void CizimiKapat()
+    {
+        patlatmaFaktoru = 0;
+        nestingFaktoru = 0;
+        gorunum3D = false;
+        StateHasChanged();
+    }
+
+    private void SetView(double x, double y)
+    {
+        rotX3d = x;
+        rotY3d = y;
+    }
+
+    private void OnWheel2d(WheelEventArgs e) =>
+        zoom2d = Math.Clamp(zoom2d * (e.DeltaY < 0 ? 1.12 : 1 / 1.12), 0.15, 8.0);
+
+    private void OnWheel3d(WheelEventArgs e) =>
+        zoom3d = Math.Clamp(zoom3d * (e.DeltaY < 0 ? 1.12 : 1 / 1.12), 0.15, 8.0);
+
+    private void Md3d(MouseEventArgs e) { arrDragging = true; arrLastX = e.ClientX; arrLastY = e.ClientY; }
+    private void Mm3d(MouseEventArgs e)
+    {
+        if (!arrDragging) return;
+        rotY3d += (e.ClientX - arrLastX) * 0.008;
+        rotX3d -= (e.ClientY - arrLastY) * 0.008;
+        rotX3d   = Math.Clamp(rotX3d, -1.4, 1.4);
+        arrLastX = e.ClientX; arrLastY = e.ClientY;
+    }
+    private void Mu3d(MouseEventArgs e) => arrDragging = false;
+
+    private string PerspektifEtiketi()
+    {
+        double xDeg = rotX3d * 180 / Math.PI;
+        double yDeg = (rotY3d * 180 / Math.PI) % 360;
+        if (yDeg < 0) yDeg += 360;
+
+        if (xDeg > 60) return "TOP";
+        if (xDeg < -60) return "BOTTOM";
+
+        // Y açısına göre pusula yönleri
+        if (yDeg >= 337.5 || yDeg < 22.5) return "FRONT";
+        if (yDeg >= 22.5 && yDeg < 67.5) return "SW";
+        if (yDeg >= 67.5 && yDeg < 112.5) return "LEFT";
+        if (yDeg >= 112.5 && yDeg < 157.5) return "NW";
+        if (yDeg >= 157.5 && yDeg < 202.5) return "BACK";
+        if (yDeg >= 202.5 && yDeg < 247.5) return "NE";
+        if (yDeg >= 247.5 && yDeg < 292.5) return "RIGHT";
+        if (yDeg >= 292.5 && yDeg < 337.5) return "SE";
+
+        return "CUSTOM";
+    }
+
+    private record DelikSVG(double X, double Y, double R, string Tip);
+    private record Yuz3d(double[] Xs, double[] Ys, double AvgZ, string Fill, string Stroke, double Sw, string Label = "", double W = 0, double H = 0, List<DelikSVG> Delikler = null);
+
+    private string PtsStr(Yuz3d y) =>
+        string.Join(" ", y.Xs.Zip(y.Ys, (x, yy) => $"{N(x)},{N(yy)}"));
+
+    private List<Yuz3d> Yuzler3d()
+    {
+        double W = genislik, H = yukseklik, D = derinlik, K = kalinlikMm;
+        double cx = W / 2, cy = H / 2, cz = D / 2;
+        const double svgW = 800, svgH = 600;
+        double scale = Math.Min(svgW, svgH) * 0.32 / Math.Max(W, Math.Max(H, D));
+        double cosY = Math.Cos(rotY3d), sinY = Math.Sin(rotY3d);
+        double cosX = Math.Cos(rotX3d), sinX = Math.Sin(rotX3d);
+
+        (double sx, double sy, double sz) Proj(double x, double y, double z, double ox = 0, double oy = 0, double oz = 0, double nx = 0, double nz = 0, string tip = "")
+        {
+            double nestT = nestingFaktoru / 100.0;
+            
+            double dx3d = (x + ox * patlatmaFaktoru) - cx;
+            double dy3d = (y + oy * patlatmaFaktoru) - cy;
+            double dz3d = (z + oz * patlatmaFaktoru) - cz;
+
+            double dxNest = 0, dyNest = 0, dzNest = 0;
+
+            if (tip == "yatay") {
+                dxNest = (z - cz) + (nx * W * 1.05);
+                dyNest = 0;
+                dzNest = (x - cx) + (nz * D * 1.05); 
+            } else if (tip == "dikey_yan") {
+                dxNest = (z - cz) + (nx * W * 1.05);
+                dyNest = 0;
+                dzNest = (y - cy) + (nz * D * 1.05);
+            } else {
+                dxNest = dx3d; dyNest = dy3d; dzNest = dz3d;
+            }
+
+            double dx = dx3d * (1 - nestT) + dxNest * nestT;
+            double dy = dy3d * (1 - nestT) + dyNest * nestT;
+            double dz = dz3d * (1 - nestT) + dzNest * nestT;
+            
+            double x1 = dx * cosY + dz * sinY, z1 = -dx * sinY + dz * cosY;
+            double y2 = dy * cosX - z1 * sinX, z2 = dy * sinX + z1 * cosX;
+            return (x1 * scale + svgW / 2, -y2 * scale + svgH / 2, z2);
+        }
+
+        var list = new List<Yuz3d>();
+        void Ekle(string fill, string stroke, double sw, string lbl, double pW, double pH,
+                  (double x, double y, double z) p0, (double x, double y, double z) p1,
+                  (double x, double y, double z) p2, (double x, double y, double z) p3,
+                  double ox = 0, double oy = 0, double oz = 0, double nx = 0, double nz = 0, string tip = "",
+                  List<(double x, double y, double z, double r, string t)> rawHoles = null)
+        {
+            var pts = new[] { Proj(p0.x,p0.y,p0.z, ox, oy, oz, nx, nz, tip), Proj(p1.x,p1.y,p1.z, ox, oy, oz, nx, nz, tip),
+                              Proj(p2.x,p2.y,p2.z, ox, oy, oz, nx, nz, tip), Proj(p3.x,p3.y,p3.z, ox, oy, oz, nx, nz, tip) };
+
+            List<DelikSVG> projectedHoles = null;
+            if (rawHoles != null)
+            {
+                projectedHoles = rawHoles.Select(h => {
+                    var p = Proj(h.x, h.y, h.z, ox, oy, oz, nx, nz, tip);
+                    return new DelikSVG(p.sx, p.sy, Math.Max(h.r * scale * 3.5, 2), h.t); // Görünürlük için büyütüldü
+                }).ToList();
+            }
+
+            double avgZ = (pts[0].sz + pts[1].sz + pts[2].sz + pts[3].sz) / 4;
+            list.Add(new Yuz3d(pts.Select(p => p.sx).ToArray(),
+                               pts.Select(p => p.sy).ToArray(),
+                               avgZ, fill, stroke, sw, lbl, pW, pH, projectedHoles));
+        }
+
+        // Birlestirme Verileri
+        var c = birlestirmeler.FirstOrDefault(x => x.SistemTipi == "MİNİFİKS" && x.IslemTipi == "ÇANAK") ?? new Birlestirme { XOfset = 28, YOfset = 50, Capi = 15 };
+        var ym = birlestirmeler.FirstOrDefault(x => x.SistemTipi == "MİNİFİKS" && x.IslemTipi == "YATAY MİL") ?? new Birlestirme { XOfset = 0, YOfset = 50, Capi = 8 };
+        var yd = birlestirmeler.FirstOrDefault(x => x.SistemTipi == "MİNİFİKS" && x.IslemTipi == "YATAY DÜBEL") ?? new Birlestirme { XOfset = 0, YOfset = 82, Capi = 8 };
+        var sm = birlestirmeler.FirstOrDefault(x => x.SistemTipi == "MİNİFİKS" && x.IslemTipi == "YÜZEY MİL") ?? new Birlestirme { XOfset = 9, YOfset = 50, Capi = 8 };
+        var sd = birlestirmeler.FirstOrDefault(x => x.SistemTipi == "MİNİFİKS" && x.IslemTipi == "YÜZEY DÜBEL") ?? new Birlestirme { XOfset = 9, YOfset = 82, Capi = 8 };
+
+        // Montaj tipine göre dış parçaların boyut ve konumlarını hesapla
+        double altW = W, ustW = W;
+        double solH = H, sagH = H;
+        double altX = 0, ustX = 0;
+        double solY = 0, sagY = 0;
+
+        if (montajTipi == "Alt-Üst İçeride")
+        {
+            altW = W - 2 * K; altX = K;
+            ustW = W - 2 * K; ustX = K;
+        }
+        else if (montajTipi == "Alt-Üst Dışarıda")
+        {
+            solH = H - 2 * K; solY = K;
+            sagH = H - 2 * K; sagY = K;
+        }
+        else if (montajTipi == "Alt İçeride-Üst Dışarıda")
+        {
+            altW = W - 2 * K; altX = K;
+            solH = H - K;     solY = 0;
+            sagH = H - K;     sagY = 0;
+        }
+        else // Alt Dışarıda-Üst İçeride
+        {
+            ustW = W - 2 * K; ustX = K;
+            solH = H - K;     solY = K;
+            sagH = H - K;     sagY = K;
+        }
+
+        // --- DELİK HESAPLAMALARI ---
+        var hAlt = new List<(double x, double y, double z, double r, string t)>();
+        var hUst = new List<(double x, double y, double z, double r, string t)>();
+        var hSol = new List<(double x, double y, double z, double r, string t)>();
+        var hSag = new List<(double x, double y, double z, double r, string t)>();
+
+        if (seciliGovdeSistemTipi == "MİNİFİKS")
+        {
+            if (montajTipi == "Alt-Üst İçeride")
+            {
+                // ALT ve ÜST: Kenar delikleri (Çanak, Yatay Mil, Yatay Dübel)
+                hAlt.Add((altX+c.XOfset, 0, c.YOfset, c.Capi/2, "C")); hAlt.Add((altX+ym.XOfset, 0, ym.YOfset, ym.Capi/2, "M")); hAlt.Add((altX+yd.XOfset, 0, yd.YOfset, yd.Capi/2, "D"));
+                hAlt.Add((altX+yd.XOfset, 0, D-yd.YOfset, yd.Capi/2, "D")); hAlt.Add((altX+ym.XOfset, 0, D-ym.YOfset, ym.Capi/2, "M")); hAlt.Add((altX+c.XOfset, 0, D-c.YOfset, c.Capi/2, "C"));
+                hAlt.Add((altX+altW-c.XOfset, 0, c.YOfset, c.Capi/2, "C")); hAlt.Add((altX+altW-ym.XOfset, 0, ym.YOfset, ym.Capi/2, "M")); hAlt.Add((altX+altW-yd.XOfset, 0, yd.YOfset, yd.Capi/2, "D"));
+                hAlt.Add((altX+altW-yd.XOfset, 0, D-yd.YOfset, yd.Capi/2, "D")); hAlt.Add((altX+altW-ym.XOfset, 0, D-ym.YOfset, ym.Capi/2, "M")); hAlt.Add((altX+altW-c.XOfset, 0, D-c.YOfset, c.Capi/2, "C"));
+
+                hUst.Add((ustX+c.XOfset, H, c.YOfset, c.Capi/2, "C")); hUst.Add((ustX+ym.XOfset, H, ym.YOfset, ym.Capi/2, "M")); hUst.Add((ustX+yd.XOfset, H, yd.YOfset, yd.Capi/2, "D"));
+                hUst.Add((ustX+yd.XOfset, H, D-yd.YOfset, yd.Capi/2, "D")); hUst.Add((ustX+ym.XOfset, H, D-ym.YOfset, ym.Capi/2, "M")); hUst.Add((ustX+c.XOfset, H, D-c.YOfset, c.Capi/2, "C"));
+                hUst.Add((ustX+ustW-c.XOfset, H, c.YOfset, c.Capi/2, "C")); hUst.Add((ustX+ustW-ym.XOfset, H, ym.YOfset, ym.Capi/2, "M")); hUst.Add((ustX+ustW-yd.XOfset, H, yd.YOfset, yd.Capi/2, "D"));
+                hUst.Add((ustX+ustW-yd.XOfset, H, D-yd.YOfset, yd.Capi/2, "D")); hUst.Add((ustX+ustW-ym.XOfset, H, D-ym.YOfset, ym.Capi/2, "M")); hUst.Add((ustX+ustW-c.XOfset, H, D-c.YOfset, c.Capi/2, "C"));
+
+                // SOL ve SAĞ: Yüzey delikleri (Yüzey Mil → Yüzey Dübel → Yüzey Dübel → Yüzey Mil)
+                hSol.Add((0, solY+sm.XOfset, sm.YOfset, sm.Capi/2, "SM")); hSol.Add((0, solY+sd.XOfset, sd.YOfset, sd.Capi/2, "SD"));
+                hSol.Add((0, solY+sd.XOfset, D-sd.YOfset, sd.Capi/2, "SD")); hSol.Add((0, solY+sm.XOfset, D-sm.YOfset, sm.Capi/2, "SM"));
+                hSol.Add((0, solY+solH-sm.XOfset, sm.YOfset, sm.Capi/2, "SM")); hSol.Add((0, solY+solH-sd.XOfset, sd.YOfset, sd.Capi/2, "SD"));
+                hSol.Add((0, solY+solH-sd.XOfset, D-sd.YOfset, sd.Capi/2, "SD")); hSol.Add((0, solY+solH-sm.XOfset, D-sm.YOfset, sm.Capi/2, "SM"));
+
+                hSag.Add((W, sagY+sm.XOfset, sm.YOfset, sm.Capi/2, "SM")); hSag.Add((W, sagY+sd.XOfset, sd.YOfset, sd.Capi/2, "SD"));
+                hSag.Add((W, sagY+sd.XOfset, D-sd.YOfset, sd.Capi/2, "SD")); hSag.Add((W, sagY+sm.XOfset, D-sm.YOfset, sm.Capi/2, "SM"));
+                hSag.Add((W, sagY+sagH-sm.XOfset, sm.YOfset, sm.Capi/2, "SM")); hSag.Add((W, sagY+sagH-sd.XOfset, sd.YOfset, sd.Capi/2, "SD"));
+                hSag.Add((W, sagY+sagH-sd.XOfset, D-sd.YOfset, sd.Capi/2, "SD")); hSag.Add((W, sagY+sagH-sm.XOfset, D-sm.YOfset, sm.Capi/2, "SM"));
+            }
+            else if (montajTipi == "Alt-Üst Dışarıda")
+            {
+                // ALT ve ÜST: Yüzey delikleri (Yüzey Mil → Yüzey Dübel → Yüzey Dübel → Yüzey Mil)
+                hAlt.Add((altX+sm.XOfset, 0, sm.YOfset, sm.Capi/2, "SM")); hAlt.Add((altX+sd.XOfset, 0, sd.YOfset, sd.Capi/2, "SD"));
+                hAlt.Add((altX+sd.XOfset, 0, D-sd.YOfset, sd.Capi/2, "SD")); hAlt.Add((altX+sm.XOfset, 0, D-sm.YOfset, sm.Capi/2, "SM"));
+                hAlt.Add((altX+altW-sm.XOfset, 0, sm.YOfset, sm.Capi/2, "SM")); hAlt.Add((altX+altW-sd.XOfset, 0, sd.YOfset, sd.Capi/2, "SD"));
+                hAlt.Add((altX+altW-sd.XOfset, 0, D-sd.YOfset, sd.Capi/2, "SD")); hAlt.Add((altX+altW-sm.XOfset, 0, D-sm.YOfset, sm.Capi/2, "SM"));
+
+                hUst.Add((ustX+sm.XOfset, H, sm.YOfset, sm.Capi/2, "SM")); hUst.Add((ustX+sd.XOfset, H, sd.YOfset, sd.Capi/2, "SD"));
+                hUst.Add((ustX+sd.XOfset, H, D-sd.YOfset, sd.Capi/2, "SD")); hUst.Add((ustX+sm.XOfset, H, D-sm.YOfset, sm.Capi/2, "SM"));
+                hUst.Add((ustX+ustW-sm.XOfset, H, sm.YOfset, sm.Capi/2, "SM")); hUst.Add((ustX+ustW-sd.XOfset, H, sd.YOfset, sd.Capi/2, "SD"));
+                hUst.Add((ustX+ustW-sd.XOfset, H, D-sd.YOfset, sd.Capi/2, "SD")); hUst.Add((ustX+ustW-sm.XOfset, H, D-sm.YOfset, sm.Capi/2, "SM"));
+
+                // SOL ve SAĞ: Kenar delikleri
+                hSol.Add((0, solY+c.XOfset, c.YOfset, c.Capi/2, "C")); hSol.Add((0, solY+ym.XOfset, ym.YOfset, ym.Capi/2, "M")); hSol.Add((0, solY+yd.XOfset, yd.YOfset, yd.Capi/2, "D"));
+                hSol.Add((0, solY+yd.XOfset, D-yd.YOfset, yd.Capi/2, "D")); hSol.Add((0, solY+ym.XOfset, D-ym.YOfset, ym.Capi/2, "M")); hSol.Add((0, solY+c.XOfset, D-c.YOfset, c.Capi/2, "C"));
+                hSol.Add((0, solY+solH-c.XOfset, c.YOfset, c.Capi/2, "C")); hSol.Add((0, solY+solH-ym.XOfset, ym.YOfset, ym.Capi/2, "M")); hSol.Add((0, solY+solH-yd.XOfset, yd.YOfset, yd.Capi/2, "D"));
+                hSol.Add((0, solY+solH-yd.XOfset, D-yd.YOfset, yd.Capi/2, "D")); hSol.Add((0, solY+solH-ym.XOfset, D-ym.YOfset, ym.Capi/2, "M")); hSol.Add((0, solY+solH-c.XOfset, D-c.YOfset, c.Capi/2, "C"));
+
+                hSag.Add((W, sagY+c.XOfset, c.YOfset, c.Capi/2, "C")); hSag.Add((W, sagY+ym.XOfset, ym.YOfset, ym.Capi/2, "M")); hSag.Add((W, sagY+yd.XOfset, yd.YOfset, yd.Capi/2, "D"));
+                hSag.Add((W, sagY+yd.XOfset, D-yd.YOfset, yd.Capi/2, "D")); hSag.Add((W, sagY+ym.XOfset, D-ym.YOfset, ym.Capi/2, "M")); hSag.Add((W, sagY+c.XOfset, D-c.YOfset, c.Capi/2, "C"));
+                hSag.Add((W, sagY+sagH-c.XOfset, c.YOfset, c.Capi/2, "C")); hSag.Add((W, sagY+sagH-ym.XOfset, ym.YOfset, ym.Capi/2, "M")); hSag.Add((W, sagY+sagH-yd.XOfset, yd.YOfset, yd.Capi/2, "D"));
+                hSag.Add((W, sagY+sagH-yd.XOfset, D-yd.YOfset, yd.Capi/2, "D")); hSag.Add((W, sagY+sagH-ym.XOfset, D-ym.YOfset, ym.Capi/2, "M")); hSag.Add((W, sagY+sagH-c.XOfset, D-c.YOfset, c.Capi/2, "C"));
+            }
+        }
+
+        // 4 dış ana yüz (Cross/Haç biçimli dizilim)
+        Ekle("#FFF9C4","#777",1.2, "ALT TABLA", altW, D, (altX,0,0),(altX+altW,0,0),(altX+altW,0,D),(altX,0,D), 0, -1, 0,  0,  1, "yatay", hAlt);
+        Ekle("#FFF9C4","#777",1.2, "ÜST TABLA", ustW, D, (ustX,H,0),(ustX,H,D),(ustX+ustW,H,D),(ustX+ustW,H,0), 0,  1, 0,  0, -1, "yatay", hUst);
+        Ekle("#FFCDD2","#777",1.2, "SOL YAN", D, solH, (0,solY,0),(0,solY,D),(0,solY+solH,D),(0,solY+solH,0), -1, 0, 0, -1,  0, "dikey_yan", hSol);
+        Ekle("#FFCDD2","#777",1.2, "SAĞ YAN", D, sagH, (W,sagY,0),(W,sagY+sagH,0),(W,sagY+sagH,D),(W,sagY,D),  1, 0, 0,  1,  0, "dikey_yan", hSag);
+
+        // Panellerin iç yüzeyleri ve kenar kalınlıkları (sadece normal 3D modunda görünür)
+        if (nestingFaktoru <= 1)
+        {
+            // Dinamik ön yüz panelleri (kalınlık kenarları)
+            Ekle("#FFF9C4","#777",0.8, "", 0, 0, (ustX,H-K,0),(ustX+ustW,H-K,0),(ustX+ustW,H,0),(ustX,H,0)); // Üst ön
+            Ekle("#FFF9C4","#777",0.8, "", 0, 0, (altX,0,0),(altX+altW,0,0),(altX+altW,K,0),(altX,K,0)); // Alt ön
+            Ekle("#FFCDD2","#777",0.8, "", 0, 0, (0,solY,0),(K,solY,0),(K,solY+solH,0),(0,solY+solH,0)); // Sol ön
+            Ekle("#FFCDD2","#777",0.8, "", 0, 0, (W-K,sagY,0),(W,sagY,0),(W,sagY+sagH,0),(W-K,sagY+sagH,0)); // Sağ ön
+        }
+
+        // Raflar (Genişlik her zaman iç genişlik kadardır)
+        double icW = W - 2 * K;
+        double icH = H - 2 * K;
+
+        for (int i = 1; i <= rafSayisi; i++)
+        {
+            double ry = K + (i / (double)(rafSayisi + 1)) * icH;
+            // Her rafı ayrı bir dikey konumda göster (nz çarpanı i ile değişir)
+            double nzOffset = -1.2 - (i - 1) * 1.1; 
+            Ekle("#C8E6C9","#777",0.5, "RAF PANEL " + i, D-K, icW, (K,ry,K),(K+icW,ry,K),(K+icW,ry,D-K),(K,ry,D-K), 0, 0, 0.5, 1.8, nzOffset, "yatay");
+            if (nestingFaktoru <= 1)
+                Ekle("#C8E6C9","#777",0.5, "", 0, 0, (K,ry-K,K),(K+icW,ry-K,K),(K+icW,ry,K),(K,ry,K));
+        }
+
+        // Dikmeler (Yükseklik her zaman iç yükseklik kadardır)
+        for (int i = 1; i <= dikmeSayisi; i++)
+        {
+            double dk = K + (i / (double)(dikmeSayisi + 1)) * icW;
+            // Her dikmeyi ayrı bir yatay konumda göster (nx çarpanı i ile değişir)
+            double nxOffset = -1.8 - (i - 1) * 1.3;
+            Ekle("#BBDEFB","#777",0.5, "DİKME PANEL " + i, D-K*2, icH, (dk,K,K),(dk,K,D-K),(dk,K+icH,D-K),(dk,K+icH,K), 0, 0, 0.5, nxOffset, 1.2, "dikey_yan");
+            
+            // Ön Kenar Kalınlığı
+            if (nestingFaktoru <= 1)
+                Ekle("#BBDEFB","#777",0.5, "", 0, 0, (dk,K,K),(dk+K,K,K),(dk+K,K+icH,K),(dk,K+icH,K));
+        }
+
+        list.Sort((a, b) => b.AvgZ.CompareTo(a.AvgZ));
+        
+        // Nesting (yere serme) başladığı anda kalınlık yüzeylerini gizle, sadece ana yüzey kalsın
+        if (nestingFaktoru > 1)
+        {
+            return list.Where(x => !string.IsNullOrEmpty(x.Label)).ToList();
+        }
+
+        return list;
+    }
+
+    private record DolapBoyut(double X, double Y, double W, double H, double K);
+
+    private DolapBoyut DolapHesapla()
+    {
+        const double svgW = 800, svgH = 600, kenar = 80;
+        double kulW = svgW - kenar * 2;
+        double kulH = svgH - kenar * 2;
+        double oran  = genislik / yukseklik;
+        double w, h;
+        if (kulW / kulH > oran) { h = kulH; w = h * oran; }
+        else                    { w = kulW; h = w / oran; }
+        double x = (svgW - w) / 2;
+        double y = (svgH - h) / 2;
+        double k = Math.Max((kalinlikMm / genislik) * w, 5.0);
+        return new DolapBoyut(x, y, w, h, k);
+    }
+}
+
+// Hot Reload Tetikleme
