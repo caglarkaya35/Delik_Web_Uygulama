@@ -5,6 +5,7 @@
 @inject IJSRuntime JSRuntime
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
+@inject Shared.Servisler.DelikHesaplama DelikServisi
 
 <PageTitle>DelikPro – Mobilya Modülü</PageTitle>
 
@@ -599,7 +600,8 @@
                             double hr = Math.Max(delik.R, 2.5);
                             double cl = hr * 0.65;
                             <circle cx="@N(delik.X)" cy="@N(delik.Y)" r="@N(hr)"
-                                    fill="rgba(255,255,255,0.55)" stroke="@dRenk" stroke-width="1.2"/>
+                                    fill="rgba(255,255,255,0.55)" stroke="@dRenk" stroke-width="1.2"
+                                    stroke-dasharray="@(delik.IsThrough ? "2,1.5" : "none")" />
                             <line x1="@N(delik.X-cl)" y1="@N(delik.Y)" x2="@N(delik.X+cl)" y2="@N(delik.Y)"
                                   stroke="@dRenk" stroke-width="0.8"/>
                             <line x1="@N(delik.X)" y1="@N(delik.Y-cl)" x2="@N(delik.X)" y2="@N(delik.Y+cl)"
@@ -875,11 +877,11 @@
     {
         birlestirmeler = new()
         {
-            new Birlestirme { Id = 1, SistemTipi = "MİNİFİKS", KullanimAlani = "GÖVDE", IslemTipi = "ÇANAK", Capi = 15.00, Derinlik = 12.50, XOfset = 28.00, YOfset = 50.00, ZOfset = 0.00 },
-            new Birlestirme { Id = 2, SistemTipi = "MİNİFİKS", KullanimAlani = "GÖVDE", IslemTipi = "YATAY MİL", Capi = 8.00, Derinlik = 10.00, XOfset = 0.00, YOfset = 50.00, ZOfset = 0.00 },
-            new Birlestirme { Id = 3, SistemTipi = "MİNİFİKS", KullanimAlani = "GÖVDE", IslemTipi = "YATAY DÜBEL", Capi = 8.00, Derinlik = 10.00, XOfset = 0.00, YOfset = 82.00, ZOfset = 0.00 },
-            new Birlestirme { Id = 4, SistemTipi = "MİNİFİKS", KullanimAlani = "GÖVDE", IslemTipi = "YÜZEY MİL", Capi = 8.00, Derinlik = 10.00, XOfset = 9.00, YOfset = 50.00, ZOfset = 0.00 },
-            new Birlestirme { Id = 5, SistemTipi = "MİNİFİKS", KullanimAlani = "GÖVDE", IslemTipi = "YÜZEY DÜBEL", Capi = 8.00, Derinlik = 10.00, XOfset = 9.00, YOfset = 82.00, ZOfset = 0.00 }
+            new Birlestirme { Id = 1, SistemTipi = "MİNİFİKS", KullanimAlani = "GÖVDE", IslemTipi = "ÇANAK", Capi = 15.00, Derinlik = 12.50, XOfset = 9.50, YOfset = 37.00, ZOfset = 0.00 },
+            new Birlestirme { Id = 2, SistemTipi = "MİNİFİKS", KullanimAlani = "GÖVDE", IslemTipi = "YATAY MİL", Capi = 8.00, Derinlik = 10.00, XOfset = 9.50, YOfset = 82.00, ZOfset = 0.00 },
+            new Birlestirme { Id = 3, SistemTipi = "MİNİFİKS", KullanimAlani = "GÖVDE", IslemTipi = "YATAY DÜBEL", Capi = 8.00, Derinlik = 10.00, XOfset = 9.50, YOfset = 128.00, ZOfset = 0.00 },
+            new Birlestirme { Id = 4, SistemTipi = "MİNİFİKS", KullanimAlani = "GÖVDE", IslemTipi = "YÜZEY MİL", Capi = 8.00, Derinlik = 10.00, XOfset = 9.50, YOfset = 82.00, ZOfset = 0.00 },
+            new Birlestirme { Id = 5, SistemTipi = "MİNİFİKS", KullanimAlani = "GÖVDE", IslemTipi = "YÜZEY DÜBEL", Capi = 8.00, Derinlik = 10.00, XOfset = 9.50, YOfset = 128.00, ZOfset = 0.00 }
         };
     }
 
@@ -1171,7 +1173,7 @@
         return "CUSTOM";
     }
 
-    private record DelikSVG(double X, double Y, double R, string Tip);
+    private record DelikSVG(double X, double Y, double R, string Tip, bool IsThrough = false);
     private record Yuz3d(double[] Xs, double[] Ys, double AvgZ, string Fill, string Stroke, double Sw, string Label = "", double W = 0, double H = 0, List<DelikSVG> Delikler = null);
 
     private string PtsStr(Yuz3d y) =>
@@ -1195,15 +1197,14 @@
             double dz3d = (z + oz * patlatmaFaktoru) - cz;
 
             double dxNest = 0, dyNest = 0, dzNest = 0;
-
             if (tip == "yatay") {
-                dxNest = (z - cz) + (nx * W * 1.05);
+                dxNest = (z - cz) + (nz * D * 1.05);
+                dzNest = (x - cx) + (nx * W * 1.05);
                 dyNest = 0;
-                dzNest = (x - cx) + (nz * D * 1.05); 
             } else if (tip == "dikey_yan") {
                 dxNest = (z - cz) + (nx * W * 1.05);
-                dyNest = 0;
                 dzNest = (y - cy) + (nz * D * 1.05);
+                dyNest = 0;
             } else {
                 dxNest = dx3d; dyNest = dy3d; dzNest = dz3d;
             }
@@ -1222,7 +1223,7 @@
                   (double x, double y, double z) p0, (double x, double y, double z) p1,
                   (double x, double y, double z) p2, (double x, double y, double z) p3,
                   double ox = 0, double oy = 0, double oz = 0, double nx = 0, double nz = 0, string tip = "",
-                  List<(double x, double y, double z, double r, string t)> rawHoles = null)
+                  List<(double x, double y, double z, double r, string t, double d)> rawHoles = null)
         {
             var pts = new[] { Proj(p0.x,p0.y,p0.z, ox, oy, oz, nx, nz, tip), Proj(p1.x,p1.y,p1.z, ox, oy, oz, nx, nz, tip),
                               Proj(p2.x,p2.y,p2.z, ox, oy, oz, nx, nz, tip), Proj(p3.x,p3.y,p3.z, ox, oy, oz, nx, nz, tip) };
@@ -1232,7 +1233,7 @@
             {
                 projectedHoles = rawHoles.Select(h => {
                     var p = Proj(h.x, h.y, h.z, ox, oy, oz, nx, nz, tip);
-                    return new DelikSVG(p.sx, p.sy, Math.Max(h.r * scale * 3.5, 2), h.t); // Görünürlük için büyütüldü
+                    return new DelikSVG(p.sx, p.sy, Math.Max(h.r * scale * 3.5, 2), h.t, h.d >= K - 0.1); // K (kalınlık) kadar veya fazlaysa boydan
                 }).ToList();
             }
 
@@ -1243,11 +1244,13 @@
         }
 
         // Birlestirme Verileri
-        var c = birlestirmeler.FirstOrDefault(x => x.SistemTipi == "MİNİFİKS" && x.IslemTipi == "ÇANAK") ?? new Birlestirme { XOfset = 28, YOfset = 50, Capi = 15 };
-        var ym = birlestirmeler.FirstOrDefault(x => x.SistemTipi == "MİNİFİKS" && x.IslemTipi == "YATAY MİL") ?? new Birlestirme { XOfset = 0, YOfset = 50, Capi = 8 };
-        var yd = birlestirmeler.FirstOrDefault(x => x.SistemTipi == "MİNİFİKS" && x.IslemTipi == "YATAY DÜBEL") ?? new Birlestirme { XOfset = 0, YOfset = 82, Capi = 8 };
-        var sm = birlestirmeler.FirstOrDefault(x => x.SistemTipi == "MİNİFİKS" && x.IslemTipi == "YÜZEY MİL") ?? new Birlestirme { XOfset = 9, YOfset = 50, Capi = 8 };
-        var sd = birlestirmeler.FirstOrDefault(x => x.SistemTipi == "MİNİFİKS" && x.IslemTipi == "YÜZEY DÜBEL") ?? new Birlestirme { XOfset = 9, YOfset = 82, Capi = 8 };
+        var c = birlestirmeler.FirstOrDefault(x => x.SistemTipi == "MİNİFİKS" && x.IslemTipi == "ÇANAK") ?? new Birlestirme { XOfset = 9.5, YOfset = 37, Capi = 15 };
+        var ym = birlestirmeler.FirstOrDefault(x => x.SistemTipi == "MİNİFİKS" && x.IslemTipi == "YATAY MİL") ?? new Birlestirme { XOfset = 9.5, YOfset = 82, Capi = 8 };
+        var yd = birlestirmeler.FirstOrDefault(x => x.SistemTipi == "MİNİFİKS" && x.IslemTipi == "YATAY DÜBEL") ?? new Birlestirme { XOfset = 9.5, YOfset = 128, Capi = 8 };
+        var sm = birlestirmeler.FirstOrDefault(x => x.SistemTipi == "MİNİFİKS" && x.IslemTipi == "YÜZEY MİL") ?? new Birlestirme { XOfset = 9.5, YOfset = 82, Capi = 8 };
+        var sd = birlestirmeler.FirstOrDefault(x => x.SistemTipi == "MİNİFİKS" && x.IslemTipi == "YÜZEY DÜBEL") ?? new Birlestirme { XOfset = 9.5, YOfset = 128, Capi = 8 };
+        // Tek hat (Z ekseni) düzeni: tüm C/M/D ve SM/SD aynı X ofsetini kullanır
+        double satirOf = c.XOfset;
 
         // Montaj tipine göre dış parçaların boyut ve konumlarını hesapla
         double altW = W, ustW = W;
@@ -1279,66 +1282,36 @@
         }
 
         // --- DELİK HESAPLAMALARI ---
-        var hAlt = new List<(double x, double y, double z, double r, string t)>();
-        var hUst = new List<(double x, double y, double z, double r, string t)>();
-        var hSol = new List<(double x, double y, double z, double r, string t)>();
-        var hSag = new List<(double x, double y, double z, double r, string t)>();
+        // Karışık montaj tiplerinde SOL/SAĞ delikleri panelin alt/üst kenarlarında, Z (önden arkaya) boyunca dizilir.
+        bool karisikMontaj = montajTipi == "Alt İçeride-Üst Dışarıda" || montajTipi == "Alt Dışarıda-Üst İçeride";
 
-        if (seciliGovdeSistemTipi == "MİNİFİKS")
-        {
-            if (montajTipi == "Alt-Üst İçeride")
-            {
-                // ALT ve ÜST: Kenar delikleri (Çanak, Yatay Mil, Yatay Dübel)
-                hAlt.Add((altX+c.XOfset, 0, c.YOfset, c.Capi/2, "C")); hAlt.Add((altX+ym.XOfset, 0, ym.YOfset, ym.Capi/2, "M")); hAlt.Add((altX+yd.XOfset, 0, yd.YOfset, yd.Capi/2, "D"));
-                hAlt.Add((altX+yd.XOfset, 0, D-yd.YOfset, yd.Capi/2, "D")); hAlt.Add((altX+ym.XOfset, 0, D-ym.YOfset, ym.Capi/2, "M")); hAlt.Add((altX+c.XOfset, 0, D-c.YOfset, c.Capi/2, "C"));
-                hAlt.Add((altX+altW-c.XOfset, 0, c.YOfset, c.Capi/2, "C")); hAlt.Add((altX+altW-ym.XOfset, 0, ym.YOfset, ym.Capi/2, "M")); hAlt.Add((altX+altW-yd.XOfset, 0, yd.YOfset, yd.Capi/2, "D"));
-                hAlt.Add((altX+altW-yd.XOfset, 0, D-yd.YOfset, yd.Capi/2, "D")); hAlt.Add((altX+altW-ym.XOfset, 0, D-ym.YOfset, ym.Capi/2, "M")); hAlt.Add((altX+altW-c.XOfset, 0, D-c.YOfset, c.Capi/2, "C"));
+        var pAlt = new Parca { En = altW, Boy = D, Kalinlik = K };
+        var pUst = new Parca { En = ustW, Boy = D, Kalinlik = K };
+        var pSol = karisikMontaj
+            ? new Parca { En = D, Boy = solH, Kalinlik = K }
+            : new Parca { En = solH, Boy = D, Kalinlik = K };
+        var pSag = karisikMontaj
+            ? new Parca { En = D, Boy = sagH, Kalinlik = K }
+            : new Parca { En = sagH, Boy = D, Kalinlik = K };
 
-                hUst.Add((ustX+c.XOfset, H, c.YOfset, c.Capi/2, "C")); hUst.Add((ustX+ym.XOfset, H, ym.YOfset, ym.Capi/2, "M")); hUst.Add((ustX+yd.XOfset, H, yd.YOfset, yd.Capi/2, "D"));
-                hUst.Add((ustX+yd.XOfset, H, D-yd.YOfset, yd.Capi/2, "D")); hUst.Add((ustX+ym.XOfset, H, D-ym.YOfset, ym.Capi/2, "M")); hUst.Add((ustX+c.XOfset, H, D-c.YOfset, c.Capi/2, "C"));
-                hUst.Add((ustX+ustW-c.XOfset, H, c.YOfset, c.Capi/2, "C")); hUst.Add((ustX+ustW-ym.XOfset, H, ym.YOfset, ym.Capi/2, "M")); hUst.Add((ustX+ustW-yd.XOfset, H, yd.YOfset, yd.Capi/2, "D"));
-                hUst.Add((ustX+ustW-yd.XOfset, H, D-yd.YOfset, yd.Capi/2, "D")); hUst.Add((ustX+ustW-ym.XOfset, H, D-ym.YOfset, ym.Capi/2, "M")); hUst.Add((ustX+ustW-c.XOfset, H, D-c.YOfset, c.Capi/2, "C"));
+        DelikServisi.DelikleriHesapla(pAlt, birlestirmeler, seciliGovdeSistemTipi, "ALT", montajTipi, D);
+        DelikServisi.DelikleriHesapla(pUst, birlestirmeler, seciliGovdeSistemTipi, "ÜST", montajTipi, D);
+        DelikServisi.DelikleriHesapla(pSol, birlestirmeler, seciliGovdeSistemTipi, "SOL", montajTipi, D);
+        DelikServisi.DelikleriHesapla(pSag, birlestirmeler, seciliGovdeSistemTipi, "SAĞ", montajTipi, D);
 
-                // SOL ve SAĞ: Yüzey delikleri (Yüzey Mil → Yüzey Dübel → Yüzey Dübel → Yüzey Mil)
-                hSol.Add((0, solY+sm.XOfset, sm.YOfset, sm.Capi/2, "SM")); hSol.Add((0, solY+sd.XOfset, sd.YOfset, sd.Capi/2, "SD"));
-                hSol.Add((0, solY+sd.XOfset, D-sd.YOfset, sd.Capi/2, "SD")); hSol.Add((0, solY+sm.XOfset, D-sm.YOfset, sm.Capi/2, "SM"));
-                hSol.Add((0, solY+solH-sm.XOfset, sm.YOfset, sm.Capi/2, "SM")); hSol.Add((0, solY+solH-sd.XOfset, sd.YOfset, sd.Capi/2, "SD"));
-                hSol.Add((0, solY+solH-sd.XOfset, D-sd.YOfset, sd.Capi/2, "SD")); hSol.Add((0, solY+solH-sm.XOfset, D-sm.YOfset, sm.Capi/2, "SM"));
-
-                hSag.Add((W, sagY+sm.XOfset, sm.YOfset, sm.Capi/2, "SM")); hSag.Add((W, sagY+sd.XOfset, sd.YOfset, sd.Capi/2, "SD"));
-                hSag.Add((W, sagY+sd.XOfset, D-sd.YOfset, sd.Capi/2, "SD")); hSag.Add((W, sagY+sm.XOfset, D-sm.YOfset, sm.Capi/2, "SM"));
-                hSag.Add((W, sagY+sagH-sm.XOfset, sm.YOfset, sm.Capi/2, "SM")); hSag.Add((W, sagY+sagH-sd.XOfset, sd.YOfset, sd.Capi/2, "SD"));
-                hSag.Add((W, sagY+sagH-sd.XOfset, D-sd.YOfset, sd.Capi/2, "SD")); hSag.Add((W, sagY+sagH-sm.XOfset, D-sm.YOfset, sm.Capi/2, "SM"));
-            }
-            else if (montajTipi == "Alt-Üst Dışarıda")
-            {
-                // ALT ve ÜST: Yüzey delikleri (Yüzey Mil → Yüzey Dübel → Yüzey Dübel → Yüzey Mil)
-                hAlt.Add((altX+sm.XOfset, 0, sm.YOfset, sm.Capi/2, "SM")); hAlt.Add((altX+sd.XOfset, 0, sd.YOfset, sd.Capi/2, "SD"));
-                hAlt.Add((altX+sd.XOfset, 0, D-sd.YOfset, sd.Capi/2, "SD")); hAlt.Add((altX+sm.XOfset, 0, D-sm.YOfset, sm.Capi/2, "SM"));
-                hAlt.Add((altX+altW-sm.XOfset, 0, sm.YOfset, sm.Capi/2, "SM")); hAlt.Add((altX+altW-sd.XOfset, 0, sd.YOfset, sd.Capi/2, "SD"));
-                hAlt.Add((altX+altW-sd.XOfset, 0, D-sd.YOfset, sd.Capi/2, "SD")); hAlt.Add((altX+altW-sm.XOfset, 0, D-sm.YOfset, sm.Capi/2, "SM"));
-
-                hUst.Add((ustX+sm.XOfset, H, sm.YOfset, sm.Capi/2, "SM")); hUst.Add((ustX+sd.XOfset, H, sd.YOfset, sd.Capi/2, "SD"));
-                hUst.Add((ustX+sd.XOfset, H, D-sd.YOfset, sd.Capi/2, "SD")); hUst.Add((ustX+sm.XOfset, H, D-sm.YOfset, sm.Capi/2, "SM"));
-                hUst.Add((ustX+ustW-sm.XOfset, H, sm.YOfset, sm.Capi/2, "SM")); hUst.Add((ustX+ustW-sd.XOfset, H, sd.YOfset, sd.Capi/2, "SD"));
-                hUst.Add((ustX+ustW-sd.XOfset, H, D-sd.YOfset, sd.Capi/2, "SD")); hUst.Add((ustX+ustW-sm.XOfset, H, D-sm.YOfset, sm.Capi/2, "SM"));
-
-                // SOL ve SAĞ: Kenar delikleri
-                hSol.Add((0, solY+c.XOfset, c.YOfset, c.Capi/2, "C")); hSol.Add((0, solY+ym.XOfset, ym.YOfset, ym.Capi/2, "M")); hSol.Add((0, solY+yd.XOfset, yd.YOfset, yd.Capi/2, "D"));
-                hSol.Add((0, solY+yd.XOfset, D-yd.YOfset, yd.Capi/2, "D")); hSol.Add((0, solY+ym.XOfset, D-ym.YOfset, ym.Capi/2, "M")); hSol.Add((0, solY+c.XOfset, D-c.YOfset, c.Capi/2, "C"));
-                hSol.Add((0, solY+solH-c.XOfset, c.YOfset, c.Capi/2, "C")); hSol.Add((0, solY+solH-ym.XOfset, ym.YOfset, ym.Capi/2, "M")); hSol.Add((0, solY+solH-yd.XOfset, yd.YOfset, yd.Capi/2, "D"));
-                hSol.Add((0, solY+solH-yd.XOfset, D-yd.YOfset, yd.Capi/2, "D")); hSol.Add((0, solY+solH-ym.XOfset, D-ym.YOfset, ym.Capi/2, "M")); hSol.Add((0, solY+solH-c.XOfset, D-c.YOfset, c.Capi/2, "C"));
-
-                hSag.Add((W, sagY+c.XOfset, c.YOfset, c.Capi/2, "C")); hSag.Add((W, sagY+ym.XOfset, ym.YOfset, ym.Capi/2, "M")); hSag.Add((W, sagY+yd.XOfset, yd.YOfset, yd.Capi/2, "D"));
-                hSag.Add((W, sagY+yd.XOfset, D-yd.YOfset, yd.Capi/2, "D")); hSag.Add((W, sagY+ym.XOfset, D-ym.YOfset, ym.Capi/2, "M")); hSag.Add((W, sagY+c.XOfset, D-c.YOfset, c.Capi/2, "C"));
-                hSag.Add((W, sagY+sagH-c.XOfset, c.YOfset, c.Capi/2, "C")); hSag.Add((W, sagY+sagH-ym.XOfset, ym.YOfset, ym.Capi/2, "M")); hSag.Add((W, sagY+sagH-yd.XOfset, yd.YOfset, yd.Capi/2, "D"));
-                hSag.Add((W, sagY+sagH-yd.XOfset, D-yd.YOfset, yd.Capi/2, "D")); hSag.Add((W, sagY+sagH-ym.XOfset, D-ym.YOfset, ym.Capi/2, "M")); hSag.Add((W, sagY+sagH-c.XOfset, D-c.YOfset, c.Capi/2, "C"));
-            }
-        }
+        // MAPPING: ALT/ÜST → d.X=cabinet X, d.Y=cabinet Z. SOL/SAĞ pure → d.X=cabinet Y, d.Y=cabinet Z. SOL/SAĞ karışık → d.X=cabinet Z, d.Y=cabinet Y.
+        var hAlt = pAlt.Delikler.Select(d => (d.X + altX, 0.0, d.Y, d.Cap/2, d.Tip, d.Derinlik)).ToList();
+        var hUst = pUst.Delikler.Select(d => (d.X + ustX, H, d.Y, d.Cap/2, d.Tip, d.Derinlik)).ToList();
+        var hSol = karisikMontaj
+            ? pSol.Delikler.Select(d => (0.0, d.Y + solY, d.X, d.Cap/2, d.Tip, d.Derinlik)).ToList()
+            : pSol.Delikler.Select(d => (0.0, d.X + solY, d.Y, d.Cap/2, d.Tip, d.Derinlik)).ToList();
+        var hSag = karisikMontaj
+            ? pSag.Delikler.Select(d => (W, d.Y + sagY, d.X, d.Cap/2, d.Tip, d.Derinlik)).ToList()
+            : pSag.Delikler.Select(d => (W, d.X + sagY, d.Y, d.Cap/2, d.Tip, d.Derinlik)).ToList();
 
         // 4 dış ana yüz (Cross/Haç biçimli dizilim)
-        Ekle("#FFF9C4","#777",1.2, "ALT TABLA", altW, D, (altX,0,0),(altX+altW,0,0),(altX+altW,0,D),(altX,0,D), 0, -1, 0,  0,  1, "yatay", hAlt);
-        Ekle("#FFF9C4","#777",1.2, "ÜST TABLA", ustW, D, (ustX,H,0),(ustX,H,D),(ustX+ustW,H,D),(ustX+ustW,H,0), 0,  1, 0,  0, -1, "yatay", hUst);
+        Ekle("#FFF9C4","#777",1.2, "ALT TABLA", D, altW, (altX,0,0),(altX+altW,0,0),(altX+altW,0,D),(altX,0,D), 0, -1, 0,  1,  0, "yatay", hAlt);
+        Ekle("#FFF9C4","#777",1.2, "ÜST TABLA", D, ustW, (ustX,H,0),(ustX,H,D),(ustX+ustW,H,D),(ustX+ustW,H,0), 0,  1, 0, -1,  0, "yatay", hUst);
         Ekle("#FFCDD2","#777",1.2, "SOL YAN", D, solH, (0,solY,0),(0,solY,D),(0,solY+solH,D),(0,solY+solH,0), -1, 0, 0, -1,  0, "dikey_yan", hSol);
         Ekle("#FFCDD2","#777",1.2, "SAĞ YAN", D, sagH, (W,sagY,0),(W,sagY+sagH,0),(W,sagY+sagH,D),(W,sagY,D),  1, 0, 0,  1,  0, "dikey_yan", hSag);
 
@@ -1359,34 +1332,44 @@
         for (int i = 1; i <= rafSayisi; i++)
         {
             double ry = K + (i / (double)(rafSayisi + 1)) * icH;
-            // Her rafı ayrı bir dikey konumda göster (nz çarpanı i ile değişir)
             double nzOffset = -1.2 - (i - 1) * 1.1; 
-            Ekle("#C8E6C9","#777",0.5, "RAF PANEL " + i, D-K, icW, (K,ry,K),(K+icW,ry,K),(K+icW,ry,D-K),(K,ry,D-K), 0, 0, 0.5, 1.8, nzOffset, "yatay");
+
+            var pRaf = new Parca { En = icW, Boy = D - 2*K, Kalinlik = K };
+            DelikServisi.DelikleriHesapla(pRaf, birlestirmeler, seciliDikmeSistemTipi, "RAF", montajTipi, D);
+            var hRaf = pRaf.Delikler.Select(d => (d.X + K, ry, d.Y + K, d.Cap/2, d.Tip, d.Derinlik)).ToList();
+
+            Ekle("#C8E6C9","#777",0.5, "RAF PANEL " + i, D-K, icW, (K,ry,K),(K+icW,ry,K),(K+icW,ry,D-K),(K,ry,D-K), 0, 0, 0.5, 1.8, nzOffset, "yatay", hRaf);
             if (nestingFaktoru <= 1)
                 Ekle("#C8E6C9","#777",0.5, "", 0, 0, (K,ry-K,K),(K+icW,ry-K,K),(K+icW,ry,K),(K,ry,K));
+
+            // Yanlara raf bağlantı deliklerini ekle (yüzey delikleri)
+            var pYanYuzey = new Parca { En = D, Boy = K, Kalinlik = K };
+            DelikServisi.DelikleriHesapla(pYanYuzey, birlestirmeler, seciliDikmeSistemTipi, "SOL", "Alt-Üst İçeride", D);
+            foreach (var d in pYanYuzey.Delikler.Where(x => x.Tip.StartsWith("S")))
+            {
+                hSol.Add((0.0, ry + (d.Y == satirOf ? satirOf : -satirOf), d.X, d.Cap/2, d.Tip, d.Derinlik));
+                hSag.Add((W, ry + (d.Y == satirOf ? satirOf : -satirOf), d.X, d.Cap/2, d.Tip, d.Derinlik));
+            }
         }
 
         // Dikmeler (Yükseklik her zaman iç yükseklik kadardır)
         for (int i = 1; i <= dikmeSayisi; i++)
         {
             double dk = K + (i / (double)(dikmeSayisi + 1)) * icW;
-            // Her dikmeyi ayrı bir yatay konumda göster (nx çarpanı i ile değişir)
             double nxOffset = -1.8 - (i - 1) * 1.3;
-            Ekle("#BBDEFB","#777",0.5, "DİKME PANEL " + i, D-K*2, icH, (dk,K,K),(dk,K,D-K),(dk,K+icH,D-K),(dk,K+icH,K), 0, 0, 0.5, nxOffset, 1.2, "dikey_yan");
+
+            var pDikme = new Parca { En = icH, Boy = D - 2*K, Kalinlik = K };
+            DelikServisi.DelikleriHesapla(pDikme, birlestirmeler, seciliDikmeSistemTipi, "DİKME", montajTipi, D);
+            var hDikme = pDikme.Delikler.Select(d => (dk, d.X + K, d.Y + K, d.Cap/2, d.Tip, d.Derinlik)).ToList();
+
+            Ekle("#BBDEFB","#777",0.5, "DİKME PANEL " + i, D-K*2, icH, (dk,K,K),(dk,K,D-K),(dk,K+icH,D-K),(dk,K+icH,K), 0, 0, 0.5, nxOffset, 1.2, "dikey_yan", hDikme);
             
-            // Ön Kenar Kalınlığı
             if (nestingFaktoru <= 1)
                 Ekle("#BBDEFB","#777",0.5, "", 0, 0, (dk,K,K),(dk+K,K,K),(dk+K,K+icH,K),(dk,K+icH,K));
         }
 
         list.Sort((a, b) => b.AvgZ.CompareTo(a.AvgZ));
-        
-        // Nesting (yere serme) başladığı anda kalınlık yüzeylerini gizle, sadece ana yüzey kalsın
-        if (nestingFaktoru > 1)
-        {
-            return list.Where(x => !string.IsNullOrEmpty(x.Label)).ToList();
-        }
-
+        if (nestingFaktoru > 1) return list.Where(x => !string.IsNullOrEmpty(x.Label)).ToList();
         return list;
     }
 
@@ -1407,5 +1390,4 @@
         return new DolapBoyut(x, y, w, h, k);
     }
 }
-
-// Hot Reload Tetikleme
+Zbirc

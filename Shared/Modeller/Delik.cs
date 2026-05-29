@@ -6,4 +6,5 @@ public class Delik
     public double Y { get; set; }
     public double Cap { get; set; }
     public double Derinlik { get; set; }
+    public string Tip { get; set; } = string.Empty;
 }

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir C:\\\\Users\\\\activ\\\\OneDrive\\\\Masaüstü\\\\Delik_Web_Uygulama *)",
+      "Bash(dotnet *)",
+      "Bash(del Class1.cs)",
+      "PowerShell(head *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(Get-ChildItem -Path \"Client\\\\Pages\" -Name)",
+      "Bash(Select-String -Pattern \"\\(resim|çizim|drawing|isometric|ayar|setting\\)\" -SimpleMatch)",
+      "Bash(netstat -ano)",
+      "Bash(git -C \"C:\\\\Users\\\\activ\\\\OneDrive\\\\Masaüstü\\\\Delik_Web_Uygulama\" diff HEAD -- Client/Pages/Home.razor)"
+    ]
+  }
+}
