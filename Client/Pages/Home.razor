@@ -1202,8 +1202,10 @@
                 dzNest = (x - cx) + (nx * W * 1.05);
                 dyNest = 0;
             } else if (tip == "dikey_yan") {
-                dxNest = (z - cz) + (nx * W * 1.05);
-                dzNest = (y - cy) + (nz * D * 1.05);
+                double xRaw = (z - cz) + (nx * W * 1.05);
+                double zRaw = -(y - cy) + (nz * D * 1.05);
+                dxNest = xRaw * cosY - zRaw * sinY;
+                dzNest = xRaw * sinY + zRaw * cosY;
                 dyNest = 0;
             } else {
                 dxNest = dx3d; dyNest = dy3d; dzNest = dz3d;
@@ -1390,4 +1392,4 @@
         return new DolapBoyut(x, y, w, h, k);
     }
 }
-Zbirc
+Zbirc 

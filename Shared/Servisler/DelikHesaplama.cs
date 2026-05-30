@@ -18,27 +18,67 @@ public class DelikHesaplama
         // Her delik tipi kendi Birleştirme satırındaki XOfset ve YOfset değerlerini kullanır.
         // XOfset → parça yüzeyinde Y konumu (kenardan ne kadar içeride)
         // YOfset → Z ekseni boyunca önden arkaya konum
-        void EkleGrup(bool isSecondSide, bool kenarMi)
+        // Bir kenar boyunca delik grubu ekler. Delikler derinlik (En) ekseni boyunca
+        // önden arkaya simetrik dizilir; ön yarı listelenir, arka yarı aynalanır.
+        void EkleGrup(bool isSecondSide, string grupTipi)
         {
             double GetBoyOfs(Birlestirme b) => isSecondSide ? parca.Boy - b.XOfset : b.XOfset;
 
-            if (kenarMi)
+            switch (grupTipi)
             {
-                // Z ekseni boyunca önden arkaya: C -> M -> D -> D -> M -> C
-                AddH(c.YOfset, GetBoyOfs(c), c, "C");
-                AddH(ym.YOfset, GetBoyOfs(ym), ym, "M");
-                AddH(yd.YOfset, GetBoyOfs(yd), yd, "D");
-                AddH(parca.En - yd.YOfset, GetBoyOfs(yd), yd, "D");
-                AddH(parca.En - ym.YOfset, GetBoyOfs(ym), ym, "M");
-                AddH(parca.En - c.YOfset, GetBoyOfs(c), c, "C");
-            }
-            else
-            {
-                // Z ekseni boyunca önden arkaya: SM -> SD -> SD -> SM
-                AddH(sm.YOfset, GetBoyOfs(sm), sm, "SM");
-                AddH(sd.YOfset, GetBoyOfs(sd), sd, "SD");
-                AddH(parca.En - sd.YOfset, GetBoyOfs(sd), sd, "SD");
-                AddH(parca.En - sm.YOfset, GetBoyOfs(sm), sm, "SM");
+                case "kenar":
+                    // Önden arkaya: Ç -> YtM -> YtD -> YtD -> YtM -> Ç
+                    AddH(c.YOfset, GetBoyOfs(c), c, "C");
+                    AddH(ym.YOfset, GetBoyOfs(ym), ym, "M");
+                    AddH(yd.YOfset, GetBoyOfs(yd), yd, "D");
+                    AddH(parca.En - yd.YOfset, GetBoyOfs(yd), yd, "D");
+                    AddH(parca.En - ym.YOfset, GetBoyOfs(ym), ym, "M");
+                    AddH(parca.En - c.YOfset, GetBoyOfs(c), c, "C");
+                    break;
+
+                case "yuzey":
+                    // Önden arkaya: YzM -> YzD -> YzD -> YzM
+                    AddH(sm.YOfset, GetBoyOfs(sm), sm, "SM");
+                    AddH(sd.YOfset, GetBoyOfs(sd), sd, "SD");
+                    AddH(parca.En - sd.YOfset, GetBoyOfs(sd), sd, "SD");
+                    AddH(parca.En - sm.YOfset, GetBoyOfs(sm), sm, "SM");
+                    break;
+
+                case "yuzeyKose":
+                    // Sol köşe + sağ köşe simetrisi: YzM, YzD yan yana (Boy ekseninde)
+                    AddH(sm.XOfset, isSecondSide ? parca.Boy - sm.YOfset : sm.YOfset, sm, "SM");
+                    AddH(sd.XOfset, isSecondSide ? parca.Boy - sd.YOfset : sd.YOfset, sd, "SD");
+                    AddH(parca.En - sm.XOfset, isSecondSide ? parca.Boy - sm.YOfset : sm.YOfset, sm, "SM");
+                    AddH(parca.En - sd.XOfset, isSecondSide ? parca.Boy - sd.YOfset : sd.YOfset, sd, "SD");
+                    break;
+
+                case "canakYuzey":
+                    // Sol köşe + sağ köşe simetrisi: Ç, YzM, YzD
+                    AddH(c.XOfset,             isSecondSide ? parca.Boy - c.YOfset : c.YOfset, c,  "C");
+                    AddH(sm.XOfset,            isSecondSide ? parca.Boy - sm.YOfset : sm.YOfset, sm, "SM");
+                    AddH(sd.XOfset,            isSecondSide ? parca.Boy - sd.YOfset : sd.YOfset, sd, "SD");
+                    AddH(parca.En - c.XOfset,  isSecondSide ? parca.Boy - c.YOfset : c.YOfset, c,  "C");
+                    AddH(parca.En - sm.XOfset, isSecondSide ? parca.Boy - sm.YOfset : sm.YOfset, sm, "SM");
+                    AddH(parca.En - sd.XOfset, isSecondSide ? parca.Boy - sd.YOfset : sd.YOfset, sd, "SD");
+                    break;
+
+                case "yatay":
+                    // Sol köşe + sağ köşe simetrisi: YtM, YtD
+                    AddH(ym.XOfset,            isSecondSide ? parca.Boy - ym.YOfset : ym.YOfset, ym, "M");
+                    AddH(yd.XOfset,            isSecondSide ? parca.Boy - yd.YOfset : yd.YOfset, yd, "D");
+                    AddH(parca.En - ym.XOfset, isSecondSide ? parca.Boy - ym.YOfset : ym.YOfset, ym, "M");
+                    AddH(parca.En - yd.XOfset, isSecondSide ? parca.Boy - yd.YOfset : yd.YOfset, yd, "D");
+                    break;
+
+                case "canakYatay":
+                    // Sol köşe + sağ köşe simetrisi: Ç, YtM, YtD
+                    AddH(c.XOfset,             isSecondSide ? parca.Boy - c.YOfset : c.YOfset, c,  "C");
+                    AddH(ym.XOfset,            isSecondSide ? parca.Boy - ym.YOfset : ym.YOfset, ym, "M");
+                    AddH(yd.XOfset,            isSecondSide ? parca.Boy - yd.YOfset : yd.YOfset, yd, "D");
+                    AddH(parca.En - c.XOfset,  isSecondSide ? parca.Boy - c.YOfset : c.YOfset, c,  "C");
+                    AddH(parca.En - ym.XOfset, isSecondSide ? parca.Boy - ym.YOfset : ym.YOfset, ym, "M");
+                    AddH(parca.En - yd.XOfset, isSecondSide ? parca.Boy - yd.YOfset : yd.YOfset, yd, "D");
+                    break;
             }
         }
 
@@ -54,44 +94,52 @@ public class DelikHesaplama
         }
 
         // Genel kural:
-        //   - Parçanın bir ucu karşı parçanın İÇİNE giriyorsa → o uçta KENAR deliği (C-M-D)
-        //   - Parçanın bir ucu karşı parçanın YÜZEYİNE oturuyorsa → o uçta YÜZEY deliği (SM-SD)
+        //   - Parçanın bir ucu karşı parçanın İÇİNE giriyorsa → o uçta KENAR deliği (Ç-YtM-YtD)
+        //   - Parçanın bir ucu karşı parçanın YÜZEYİNE oturuyorsa → o uçta YÜZEY deliği (YzM-YzD)
         // ALT/ÜST: iki ucu da aynı role sahip (her ikisi de SOL ve SAĞ ile aynı şekilde buluşur)
         // SOL/SAĞ: alt ucu ALT panele, üst ucu ÜST panele bağlanır → karışık montaj tiplerinde iki uç farklı olabilir
         bool altIceride = montajTipi == "Alt-Üst İçeride" || montajTipi == "Alt İçeride-Üst Dışarıda";
         bool ustIceride = montajTipi == "Alt-Üst İçeride" || montajTipi == "Alt Dışarıda-Üst İçeride";
 
-        bool kenarFirst, kenarSecond;
+        // first  = parçanın Boy=0 ucu (SOL/SAĞ için alt kenar)
+        // second = parçanın Boy=parca.Boy ucu (SOL/SAĞ için üst kenar)
+        string grupFirst, grupSecond;
 
         if (panelRolü == "ALT")
         {
             // ALT içerideyse iki ucu da SOL/SAĞ içine girer → kenar; dışarıdaysa yüzey
-            kenarFirst = kenarSecond = altIceride;
+            grupFirst = grupSecond = altIceride ? "kenar" : "yuzey";
         }
         else if (panelRolü == "ÜST")
         {
-            kenarFirst = kenarSecond = ustIceride;
+            grupFirst = grupSecond = ustIceride ? "kenar" : "yuzey";
         }
-        else if (panelRolü == "RAF")
+        else if (panelRolü == "RAF" || panelRolü == "DİKME")
         {
-            // Raf her zaman yanların arasına sıkışır → iki uç da kenar
-            kenarFirst = kenarSecond = true;
-        }
-        else if (panelRolü == "DİKME")
-        {
-            // Dikme her zaman ALT ile ÜST arasına sıkışır → iki uç da kenar
-            kenarFirst = kenarSecond = true;
+            // Raf yanların, dikme ALT/ÜST arasına sıkışır → iki uç da kenar
+            grupFirst = grupSecond = "kenar";
         }
         else // SOL, SAĞ
         {
-            // first = alt-uç: ALT içerideyse SOL'un alt yüzeyine oturur → yüzey;
-            //                 ALT dışarıdaysa SOL'un alt kenarı ALT yüzeyine girer → kenar
-            // second = üst-uç: aynı mantık ÜST için
-            kenarFirst = !altIceride;
-            kenarSecond = !ustIceride;
+            if (montajTipi == "Alt Dışarıda-Üst İçeride")
+            {
+                grupFirst  = "canakYuzey"; // alt kenar: Ç + YzM + YzD
+                grupSecond = "yatay";      // üst kenar: YtM + YtD
+            }
+            else if (montajTipi == "Alt İçeride-Üst Dışarıda")
+            {
+                grupFirst  = "yuzeyKose"; // alt kenar: YzM + YzD köşelerde yan yana
+                grupSecond = "canakYatay"; // üst kenar: Ç + YtM + YtD
+            }
+            else
+            {
+                // Saf montaj: bir uç karşı yüzeye oturuyorsa yüzey, içine giriyorsa kenar
+                grupFirst = altIceride ? "yuzey" : "kenar";
+                grupSecond = ustIceride ? "yuzey" : "kenar";
+            }
         }
 
-        EkleGrup(false, kenarFirst);
-        EkleGrup(true, kenarSecond);
+        EkleGrup(false, grupFirst);
+        EkleGrup(true, grupSecond);
     }
 }

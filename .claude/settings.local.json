@@ -10,7 +10,8 @@
       "Bash(Get-ChildItem -Path \"Client\\\\Pages\" -Name)",
       "Bash(Select-String -Pattern \"\\(resim|çizim|drawing|isometric|ayar|setting\\)\" -SimpleMatch)",
       "Bash(netstat -ano)",
-      "Bash(git -C \"C:\\\\Users\\\\activ\\\\OneDrive\\\\Masaüstü\\\\Delik_Web_Uygulama\" diff HEAD -- Client/Pages/Home.razor)"
+      "Bash(git -C \"C:\\\\Users\\\\activ\\\\OneDrive\\\\Masaüstü\\\\Delik_Web_Uygulama\" diff HEAD -- Client/Pages/Home.razor)",
+      "Bash(Select-Object -Last 15)"
     ]
   }
 }
