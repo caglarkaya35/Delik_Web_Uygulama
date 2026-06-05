@@ -6,21 +6,21 @@ namespace Shared.Modeller;
 [Table("Makine")]
 public class Makine : BaseModel
 {
-    [PrimaryKey("id", false)] // Veritaban�ndaki k���k "id" ile C#'taki b�y�k "Id"yi e�le�tirdik
+    [PrimaryKey("id", false)]
     public int Id { get; set; }
 
-    [Column("Ad")] // E�er Supabase'de tamamen k���k harfle "ad" yazd�ysan�z buray� "ad" yap�n
+    [Column("Ad")]
     public string Ad { get; set; } = "";
 
-    [Column("XEkseniLimiti")] // E�er Supabase'de "x_ekseni_limiti" veya "xeksenilimiti" ise ona g�re g�ncelleyin
+    [Column("XEkseniLimiti")]
     public double XEkseniLimiti { get; set; }
 
-    [Column("YEkseniLimiti")] // E�er Supabase'de "y_ekseni_limiti" veya "yeksenilimiti" ise ona g�re g�ncelleyin
+    [Column("YEksenLimiti")] // Supabase'de 'i' harfi eksik yazılmış
     public double YEkseniLimiti { get; set; }
 
-    [Column("EmniyetMesafesi")] // E�er Supabase'de "emniyet_mesafesi" veya "emniyetmesafesi" ise g�ncelleyin
+    [Column("EmniyetMesafesi")]
     public double EmniyetMesafesi { get; set; }
 
-    [Column("Hiz")] // E�er Supabase'de k���k harfle "hiz" ise buray� "hiz" yap�n
+    [Column("Hiz")]
     public double Hiz { get; set; }
 }

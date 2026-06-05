@@ -13,11 +13,11 @@ builder.Services.AddScoped<Shared.Servisler.DelikHesaplama>();
 
 // Supabase �stemcisini (Client) Tan�ml�yoruz
 var supabaseUrl = "https://arovectgqyzzfkztcqwm.supabase.co";
-var supabaseKey = "sb_publishable_0_lHXtyWgRm-Ee2thHTx9w_A1pOpDFZ";
+var supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFyb3ZlY3RncXl6emZrenRjcXdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2Mzk0NDcsImV4cCI6MjA5NjIxNTQ0N30.DHv-unWDeI-JH_mdUxtmEH-sA95h9kyjuNe0T1SgtfA";
 
 var options = new Supabase.SupabaseOptions
 {
-    AutoConnectRealtime = true
+    AutoConnectRealtime = false
 };
 
 // Projeye Supabase servis olarak ekleniyor
