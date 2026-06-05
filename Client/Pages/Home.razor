@@ -2,10 +2,12 @@
 @using System.Globalization
 @using Shared.Modeller
 @using System.Text.Json
+@using static Supabase.Postgrest.Constants
 @inject IJSRuntime JSRuntime
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject Shared.Servisler.DelikHesaplama DelikServisi
+@inject Supabase.Client SupabaseClient
 
 <PageTitle>DelikPro – Mobilya Modülü</PageTitle>
 
@@ -875,33 +877,36 @@
     {
         try
         {
-            var jsonTakim = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "takimlar_db");
-            if (!string.IsNullOrEmpty(jsonTakim))
-                takimlar = JsonSerializer.Deserialize<List<Takim>>(jsonTakim) ?? new();
+            await SupabaseClient.InitializeAsync();
+
+            var resTakim = await SupabaseClient.From<Takim>().Get();
+            if (resTakim.Models.Count > 0)
+                takimlar = resTakim.Models;
             else
                 VarsayilanTakimlariYukle();
 
-            var jsonBirlestirme = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "birlestirmeler_db");
-            if (!string.IsNullOrEmpty(jsonBirlestirme))
-                birlestirmeler = JsonSerializer.Deserialize<List<Birlestirme>>(jsonBirlestirme) ?? new();
+            var resBirlestirme = await SupabaseClient.From<Birlestirme>().Get();
+            if (resBirlestirme.Models.Count > 0)
+                birlestirmeler = resBirlestirme.Models;
             else
                 VarsayilanBirlestirmeleriYukle();
 
-            var jsonMakine = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "makineler_db");
-            if (!string.IsNullOrEmpty(jsonMakine))
-                makineler = JsonSerializer.Deserialize<List<Makine>>(jsonMakine) ?? new();
+            var resMakine = await SupabaseClient.From<Makine>().Get();
+            if (resMakine.Models.Count > 0)
+                makineler = resMakine.Models;
             else
                 VarsayilanMakineleriYukle();
 
-            var jsonRaf = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "rafpimi_db");
-            if (!string.IsNullOrEmpty(jsonRaf))
-                rafPimiAyari = JsonSerializer.Deserialize<RafPimiAyari>(jsonRaf) ?? new();
+            var resRaf = await SupabaseClient.From<RafPimiAyari>().Get();
+            rafPimiAyari = resRaf.Models.FirstOrDefault() ?? new RafPimiAyari();
 
-            var jsonKoord = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "parca_delik_koordinatlari_db");
-            if (!string.IsNullOrEmpty(jsonKoord))
-                parcaDelikKoordinatlari = JsonSerializer.Deserialize<List<ParcaDelikKoordinati>>(jsonKoord) ?? new();
+            var resKoord = await SupabaseClient.From<ParcaDelikKoordinati>().Get();
+            parcaDelikKoordinatlari = resKoord.Models;
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Veri yükleme hatası: {ex.Message}", Severity.Error);
+        }
     }
 
     private void VarsayilanTakimlariYukle()
@@ -980,18 +985,18 @@
                 }
             }
 
-            var jsonTakim = JsonSerializer.Serialize(takimlar);
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "takimlar_db", jsonTakim);
+            if (takimlar.Any())
+                await SupabaseClient.From<Takim>().Upsert(takimlar);
 
-            var jsonBirlestirme = JsonSerializer.Serialize(birlestirmeler);
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "birlestirmeler_db", jsonBirlestirme);
+            if (birlestirmeler.Any())
+                await SupabaseClient.From<Birlestirme>().Upsert(birlestirmeler);
 
-            var jsonMakine = JsonSerializer.Serialize(makineler);
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "makineler_db", jsonMakine);
+            if (makineler.Any())
+                await SupabaseClient.From<Makine>().Upsert(makineler);
 
-            var jsonRaf = JsonSerializer.Serialize(rafPimiAyari);
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "rafpimi_db", jsonRaf);
-            
+            rafPimiAyari.id = 1;
+            await SupabaseClient.From<RafPimiAyari>().Upsert(rafPimiAyari);
+
             Snackbar.Add("Veritabanı güncellendi", Severity.Success);
         }
         catch (Exception ex)
@@ -1012,6 +1017,7 @@
 
     private async Task TakimSil(Takim t)
     {
+        await SupabaseClient.From<Takim>().Delete(t);
         takimlar.Remove(t);
         await VeritabaniniKaydet();
         StateHasChanged();
@@ -1060,15 +1066,16 @@
     private async Task BirlestirmeSil(Birlestirme b)
     {
         if (b == null) return;
-        
+
+        await SupabaseClient.From<Birlestirme>().Delete(b);
         birlestirmeler.Remove(b);
-        
+
         if (seciliBirlestirmeId == b.Id)
         {
             seciliBirlestirmeId = null;
             yeniBirlestirme = new Birlestirme();
         }
-        
+
         await VeritabaniniKaydet();
         StateHasChanged();
     }
@@ -1081,6 +1088,7 @@
 
     private async Task MakineSil(Makine m)
     {
+        await SupabaseClient.From<Makine>().Delete(m);
         makineler.Remove(m);
         await VeritabaniniKaydet();
         StateHasChanged();
@@ -1587,8 +1595,13 @@
 
         try
         {
-            var json = JsonSerializer.Serialize(parcaDelikKoordinatlari);
-            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "parca_delik_koordinatlari_db", json);
+            await SupabaseClient.From<ParcaDelikKoordinati>()
+                .Filter("id", Operator.GreaterThan, "0")
+                .Delete();
+
+            if (parcaDelikKoordinatlari.Any())
+                await SupabaseClient.From<ParcaDelikKoordinati>().Insert(parcaDelikKoordinatlari);
+
             Snackbar.Add($"{parcaDelikKoordinatlari.Count} delik koordinatı veritabanına kaydedildi", Severity.Success);
         }
         catch (Exception ex)
