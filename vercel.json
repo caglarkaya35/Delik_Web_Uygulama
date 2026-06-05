@@ -1,0 +1,6 @@
+{
+  "outputDirectory": "wwwroot/dist/wwwroot",
+  "rewrites": [
+    { "source": "/((?!_framework|_content|css|favicon\\.png|icon-192\\.png).*)", "destination": "/index.html" }
+  ]
+}
