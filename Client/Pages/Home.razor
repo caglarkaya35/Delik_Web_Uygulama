@@ -311,6 +311,54 @@
                     </div>
                 </div>
             }
+            else if (seciliVeritabaniKategorisi == "koordinat")
+            {
+                <div class="takim-tablo-konteyner">
+                    <div class="takim-ust-baslik" style="text-align: left; padding-left: 0;">
+                        <h2 style="font-size: 24px; color: #444;">Parça Delik Koordinatları</h2>
+                    </div>
+                    <div class="takim-tablo-sarmal" style="border-radius: 8px;">
+                        <table class="takim-tablo">
+                            <thead>
+                                <tr>
+                                    <th>PARÇA ADI</th>
+                                    <th>DELİK TİPİ</th>
+                                    <th>X KOORDİNAT</th>
+                                    <th>Y KOORDİNAT</th>
+                                    <th>Z KOORDİNAT</th>
+                                    <th>ÇAP</th>
+                                    <th>DERİNLİK</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (parcaDelikKoordinatlari.Count == 0)
+                                {
+                                    <tr>
+                                        <td colspan="7" style="text-align:center; color:#888; padding:16px;">
+                                            Henüz kayıt yok. İmalat Resmi Oluştur → VERİTABANINA KAYDET ile doldurulur.
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var k in parcaDelikKoordinatlari)
+                                    {
+                                        <tr>
+                                            <td>@k.ParcaAdi</td>
+                                            <td>@k.DelikTipi</td>
+                                            <td>@k.YKoordinat.ToString("F2")</td>
+                                            <td>@k.XKoordinat.ToString("F2")</td>
+                                            <td>@k.ZKoordinat.ToString("F2")</td>
+                                            <td>@k.Cap.ToString("F2")</td>
+                                            <td>@k.Derinlik.ToString("F2")</td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
             else if (seciliVeritabaniKategorisi == "rafpimi")
             {
                 <div class="takim-tablo-konteyner">
@@ -436,9 +484,9 @@
             @if (patlatmaFaktoru > 0)
             {
                 <div class="imalat-islem-bar">
-                    <button class="imalat-islem-btn btn-db-kaydet">VERİTABANINA KAYDET</button>
+                    <button class="imalat-islem-btn btn-db-kaydet" @onclick="ImalatVeritabaninaKaydet">VERİTABANINA KAYDET</button>
                     <button class="imalat-islem-btn btn-nest-ekle">NESTING HAVUZUNA EKLE</button>
-                    <button class="imalat-islem-btn btn-gkod-cikar">G KODU ÇIKAR</button>
+                    <button class="imalat-islem-btn btn-gkod-cikar" @onclick="GKoduCikar">G KODU ÇIKAR</button>
                     <button class="imalat-islem-btn btn-qr-cikar">QR KODU ÇIKAR</button>
                     <button class="imalat-islem-btn btn-imalat-kapat" @onclick="CizimiKapat">KAPAT</button>
                 </div>
@@ -816,6 +864,7 @@
     private RafPimiAyari rafPimiAyari = new();
     private Birlestirme yeniBirlestirme = new();
     private int? seciliBirlestirmeId = null;
+    private List<ParcaDelikKoordinati> parcaDelikKoordinatlari = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -847,6 +896,10 @@
             var jsonRaf = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "rafpimi_db");
             if (!string.IsNullOrEmpty(jsonRaf))
                 rafPimiAyari = JsonSerializer.Deserialize<RafPimiAyari>(jsonRaf) ?? new();
+
+            var jsonKoord = await JSRuntime.InvokeAsync<string>("localStorage.getItem", "parca_delik_koordinatlari_db");
+            if (!string.IsNullOrEmpty(jsonKoord))
+                parcaDelikKoordinatlari = JsonSerializer.Deserialize<List<ParcaDelikKoordinati>>(jsonKoord) ?? new();
         }
         catch { }
     }
@@ -1391,5 +1444,156 @@
         double k = Math.Max((kalinlikMm / genislik) * w, 5.0);
         return new DolapBoyut(x, y, w, h, k);
     }
+
+    private async Task GKoduCikar()
+    {
+        double W = genislik, H = yukseklik, D = derinlik, K = kalinlikMm;
+        double icW = W - 2 * K;
+        double icH = H - 2 * K;
+        bool karisikMontaj = montajTipi == "Alt İçeride-Üst Dışarıda" || montajTipi == "Alt Dışarıda-Üst İçeride";
+
+        double altW = W, ustW = W, solH = H, sagH = H;
+        if (montajTipi == "Alt-Üst İçeride") { altW = W - 2 * K; ustW = W - 2 * K; }
+        else if (montajTipi == "Alt-Üst Dışarıda") { solH = H - 2 * K; sagH = H - 2 * K; }
+        else if (montajTipi == "Alt İçeride-Üst Dışarıda") { altW = W - 2 * K; solH = H - K; sagH = H - K; }
+        else { ustW = W - 2 * K; solH = H - K; sagH = H - K; }
+
+        var pAlt = new Parca { Ad = "alt_tabla", En = altW, Boy = D, Kalinlik = K };
+        var pUst = new Parca { Ad = "ust_tabla", En = ustW, Boy = D, Kalinlik = K };
+        var pSol = karisikMontaj
+            ? new Parca { Ad = "sol_yan", En = D, Boy = solH, Kalinlik = K }
+            : new Parca { Ad = "sol_yan", En = solH, Boy = D, Kalinlik = K };
+        var pSag = karisikMontaj
+            ? new Parca { Ad = "sag_yan", En = D, Boy = sagH, Kalinlik = K }
+            : new Parca { Ad = "sag_yan", En = sagH, Boy = D, Kalinlik = K };
+
+        DelikServisi.DelikleriHesapla(pAlt, birlestirmeler, seciliGovdeSistemTipi, "ALT", montajTipi, D);
+        DelikServisi.DelikleriHesapla(pUst, birlestirmeler, seciliGovdeSistemTipi, "ÜST", montajTipi, D);
+        DelikServisi.DelikleriHesapla(pSol, birlestirmeler, seciliGovdeSistemTipi, "SOL", montajTipi, D);
+        DelikServisi.DelikleriHesapla(pSag, birlestirmeler, seciliGovdeSistemTipi, "SAĞ", montajTipi, D);
+
+        var parcalar = new List<Parca> { pAlt, pUst, pSol, pSag };
+
+        for (int i = 1; i <= rafSayisi; i++)
+        {
+            var pRaf = new Parca { Ad = $"raf_{i}", En = icW, Boy = D - 2 * K, Kalinlik = K };
+            DelikServisi.DelikleriHesapla(pRaf, birlestirmeler, seciliDikmeSistemTipi, "RAF", montajTipi, D);
+            parcalar.Add(pRaf);
+        }
+
+        for (int i = 1; i <= dikmeSayisi; i++)
+        {
+            var pDikme = new Parca { Ad = $"dikme_{i}", En = icH, Boy = D - 2 * K, Kalinlik = K };
+            DelikServisi.DelikleriHesapla(pDikme, birlestirmeler, seciliDikmeSistemTipi, "DİKME", montajTipi, D);
+            parcalar.Add(pDikme);
+        }
+
+        var uretici = new Shared.Servisler.GKodUretici();
+        var jsParam = parcalar
+            .Select(p => (object)new { ad = uretici.DosyaAdiOlustur(p), icerik = uretici.GKodUret(p, takimlar, birlestirmeler) })
+            .ToArray();
+
+        try
+        {
+            var sonuc = await JSRuntime.InvokeAsync<System.Text.Json.JsonElement>("gkodDosyalariniKaydet", (object)jsParam);
+            bool basari = sonuc.GetProperty("basari").GetBoolean();
+            string mesaj = sonuc.GetProperty("mesaj").GetString() ?? "";
+            if (basari)
+                Snackbar.Add(mesaj, Severity.Success);
+            else if (mesaj != "İptal edildi")
+                Snackbar.Add($"Hata: {mesaj}", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"G-kodu hatası: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private static string DelikTipiAdi(string tip) => tip switch
+    {
+        "C"  => "ÇANAK",
+        "SM" => "YÜZEY MİL",
+        "SD" => "YÜZEY DÜBEL",
+        "M"  => "YATAY MİL",
+        "D"  => "YATAY DÜBEL",
+        "RP" => "RAF PİMİ",
+        _    => tip
+    };
+
+    private async Task ImalatVeritabaninaKaydet()
+    {
+        double W = genislik, H = yukseklik, D = derinlik, K = kalinlikMm;
+        double icW = W - 2 * K;
+        double icH = H - 2 * K;
+        bool karisikMontaj = montajTipi == "Alt İçeride-Üst Dışarıda" || montajTipi == "Alt Dışarıda-Üst İçeride";
+
+        double altW = W, ustW = W, solH = H, sagH = H;
+        if      (montajTipi == "Alt-Üst İçeride")          { altW = W - 2 * K; ustW = W - 2 * K; }
+        else if (montajTipi == "Alt-Üst Dışarıda")         { solH = H - 2 * K; sagH = H - 2 * K; }
+        else if (montajTipi == "Alt İçeride-Üst Dışarıda") { altW = W - 2 * K; solH = H - K; sagH = H - K; }
+        else                                                 { ustW = W - 2 * K; solH = H - K; sagH = H - K; }
+
+        var pAlt = new Parca { Ad = "alt_tabla", En = altW, Boy = D, Kalinlik = K };
+        var pUst = new Parca { Ad = "ust_tabla", En = ustW, Boy = D, Kalinlik = K };
+        var pSol = karisikMontaj
+            ? new Parca { Ad = "sol_yan", En = D, Boy = solH, Kalinlik = K }
+            : new Parca { Ad = "sol_yan", En = solH, Boy = D, Kalinlik = K };
+        var pSag = karisikMontaj
+            ? new Parca { Ad = "sag_yan", En = D, Boy = sagH, Kalinlik = K }
+            : new Parca { Ad = "sag_yan", En = sagH, Boy = D, Kalinlik = K };
+
+        DelikServisi.DelikleriHesapla(pAlt, birlestirmeler, seciliGovdeSistemTipi, "ALT", montajTipi, D);
+        DelikServisi.DelikleriHesapla(pUst, birlestirmeler, seciliGovdeSistemTipi, "ÜST", montajTipi, D);
+        DelikServisi.DelikleriHesapla(pSol, birlestirmeler, seciliGovdeSistemTipi, "SOL", montajTipi, D);
+        DelikServisi.DelikleriHesapla(pSag, birlestirmeler, seciliGovdeSistemTipi, "SAĞ", montajTipi, D);
+
+        var sonuc = new List<ParcaDelikKoordinati>();
+
+        void DelikleriEkle(string ad, Parca p)
+        {
+            foreach (var d in p.Delikler)
+                sonuc.Add(new ParcaDelikKoordinati
+                {
+                    ParcaAdi = ad,
+                    DelikTipi = DelikTipiAdi(d.Tip),
+                    XKoordinat = d.X,
+                    YKoordinat = d.Y,
+                    ZKoordinat = 0,
+                    Cap = d.Cap,
+                    Derinlik = d.Derinlik
+                });
+        }
+
+        DelikleriEkle("alt_tabla", pAlt);
+        DelikleriEkle("ust_tabla", pUst);
+        DelikleriEkle("sol_yan", pSol);
+        DelikleriEkle("sag_yan", pSag);
+
+        for (int i = 1; i <= rafSayisi; i++)
+        {
+            var pRaf = new Parca { Ad = $"raf_{i}", En = icW, Boy = D - 2 * K, Kalinlik = K };
+            DelikServisi.DelikleriHesapla(pRaf, birlestirmeler, seciliDikmeSistemTipi, "RAF", montajTipi, D);
+            DelikleriEkle($"raf_{i}", pRaf);
+        }
+
+        for (int i = 1; i <= dikmeSayisi; i++)
+        {
+            var pDikme = new Parca { Ad = $"dikme_{i}", En = icH, Boy = D - 2 * K, Kalinlik = K };
+            DelikServisi.DelikleriHesapla(pDikme, birlestirmeler, seciliDikmeSistemTipi, "DİKME", montajTipi, D);
+            DelikleriEkle($"dikme_{i}", pDikme);
+        }
+
+        parcaDelikKoordinatlari = sonuc;
+
+        try
+        {
+            var json = JsonSerializer.Serialize(parcaDelikKoordinatlari);
+            await JSRuntime.InvokeVoidAsync("localStorage.setItem", "parca_delik_koordinatlari_db", json);
+            Snackbar.Add($"{parcaDelikKoordinatlari.Count} delik koordinatı veritabanına kaydedildi", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Kayıt hatası: {ex.Message}", Severity.Error);
+        }
+    }
 }
-Zbirc 

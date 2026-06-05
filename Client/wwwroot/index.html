@@ -32,6 +32,7 @@
     </div>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="_framework/blazor.webassembly.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script>
         window.downloadFileFromBase64 = function (fileName, base64, mimeType) {
             const link = document.createElement('a');
@@ -40,6 +41,43 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        };
+
+        window.gkodDosyalariniKaydet = async function (dosyalar) {
+            // Birincil: File System Access API ile klasöre kaydet
+            if (typeof window.showDirectoryPicker !== 'undefined') {
+                try {
+                    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                    for (const dosya of dosyalar) {
+                        const fileHandle = await dirHandle.getFileHandle(dosya.ad, { create: true });
+                        const writable = await fileHandle.createWritable();
+                        await writable.write(dosya.icerik);
+                        await writable.close();
+                    }
+                    return { basari: true, mesaj: dosyalar.length + ' dosya klasöre kaydedildi' };
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        return { basari: false, mesaj: 'İptal edildi' };
+                    }
+                    // API başarısız → ZIP'e geç
+                }
+            }
+            // Fallback: JSZip ile tek ZIP dosyası olarak indir
+            const zip = new JSZip();
+            for (const dosya of dosyalar) {
+                zip.file(dosya.ad, dosya.icerik);
+            }
+            const blob = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const tarih = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            a.download = tarih + '_cnc_dosyalari.zip';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            return { basari: true, mesaj: dosyalar.length + ' dosya ZIP olarak indirildi' };
         };
     </script>
 </body>
