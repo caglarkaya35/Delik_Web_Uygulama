@@ -879,29 +879,37 @@
         {
             await SupabaseClient.InitializeAsync();
 
+            bool ilkKez = false;
+
             var resTakim = await SupabaseClient.From<Takim>().Get();
             if (resTakim.Models.Count > 0)
                 takimlar = resTakim.Models;
             else
-                VarsayilanTakimlariYukle();
+            { VarsayilanTakimlariYukle(); ilkKez = true; }
 
             var resBirlestirme = await SupabaseClient.From<Birlestirme>().Get();
             if (resBirlestirme.Models.Count > 0)
                 birlestirmeler = resBirlestirme.Models;
             else
-                VarsayilanBirlestirmeleriYukle();
+            { VarsayilanBirlestirmeleriYukle(); ilkKez = true; }
 
             var resMakine = await SupabaseClient.From<Makine>().Get();
             if (resMakine.Models.Count > 0)
                 makineler = resMakine.Models;
             else
-                VarsayilanMakineleriYukle();
+            { VarsayilanMakineleriYukle(); ilkKez = true; }
 
             var resRaf = await SupabaseClient.From<RafPimiAyari>().Get();
-            rafPimiAyari = resRaf.Models.FirstOrDefault() ?? new RafPimiAyari();
+            if (resRaf.Models.Count > 0)
+                rafPimiAyari = resRaf.Models.First();
+            else
+                ilkKez = true;
 
             var resKoord = await SupabaseClient.From<ParcaDelikKoordinati>().Get();
             parcaDelikKoordinatlari = resKoord.Models;
+
+            if (ilkKez)
+                await VeritabaniniKaydet();
         }
         catch (Exception ex)
         {
