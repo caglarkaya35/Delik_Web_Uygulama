@@ -6,7 +6,7 @@ namespace Shared.Modeller;
 [Table("RafPimiAyari")]
 public class RafPimiAyari : BaseModel
 {
-    [PrimaryKey("id", false)] // Veritabanındaki otomatik artan benzersiz kimlik (Primary Key)
+    [PrimaryKey("id", true)]
     public int id { get; set; }
 
     [Column("DikeyAralikLimiti")] // Eğer Supabase'de tamamen küçük harfse "dikeyaraliklimiti" yapın

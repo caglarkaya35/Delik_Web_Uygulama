@@ -6,7 +6,7 @@ namespace Shared.Modeller;
 [Table("Takim")]
 public class Takim : BaseModel
 {
-    [PrimaryKey("No", false)] // Tak�m numaras�n� do�rudan birincil anahtar (Primary Key) yapt�k
+    [PrimaryKey("No", true)]
     public int No { get; set; }
 
     [Column("Ad")] // E�er Supabase'de tamamen k���k harfse "ad" yap�n

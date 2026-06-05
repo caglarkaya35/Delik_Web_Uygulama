@@ -6,7 +6,7 @@ namespace Shared.Modeller;
 [Table("Birlestirme")]
 public class Birlestirme : BaseModel
 {
-    [PrimaryKey("id", false)] // Veritaban�ndaki k���k "id" ile C#'taki b�y�k "Id"yi e�le�tirdik
+    [PrimaryKey("id", true)]
     public int Id { get; set; }
 
     [Column("SistemTipi")] // E�er Supabase'de tamamen k���k yazd�ysan�z "sistemtipi" veya "sistem_tipi" yap�n
