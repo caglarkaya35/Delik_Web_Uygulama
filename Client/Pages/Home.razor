@@ -879,37 +879,47 @@
         {
             await SupabaseClient.InitializeAsync();
 
-            bool ilkKez = false;
-
             var resTakim = await SupabaseClient.From<Takim>().Get();
             if (resTakim.Models.Count > 0)
                 takimlar = resTakim.Models;
             else
-            { VarsayilanTakimlariYukle(); ilkKez = true; }
+            {
+                VarsayilanTakimlariYukle();
+                if (takimlar.Any())
+                    await SupabaseClient.From<Takim>().Upsert(takimlar);
+            }
 
             var resBirlestirme = await SupabaseClient.From<Birlestirme>().Get();
             if (resBirlestirme.Models.Count > 0)
                 birlestirmeler = resBirlestirme.Models;
             else
-            { VarsayilanBirlestirmeleriYukle(); ilkKez = true; }
+            {
+                VarsayilanBirlestirmeleriYukle();
+                if (birlestirmeler.Any())
+                    await SupabaseClient.From<Birlestirme>().Upsert(birlestirmeler);
+            }
 
             var resMakine = await SupabaseClient.From<Makine>().Get();
             if (resMakine.Models.Count > 0)
                 makineler = resMakine.Models;
             else
-            { VarsayilanMakineleriYukle(); ilkKez = true; }
+            {
+                VarsayilanMakineleriYukle();
+                if (makineler.Any())
+                    await SupabaseClient.From<Makine>().Upsert(makineler);
+            }
 
             var resRaf = await SupabaseClient.From<RafPimiAyari>().Get();
             if (resRaf.Models.Count > 0)
                 rafPimiAyari = resRaf.Models.First();
             else
-                ilkKez = true;
+            {
+                rafPimiAyari = new RafPimiAyari { id = 1 };
+                await SupabaseClient.From<RafPimiAyari>().Upsert(rafPimiAyari);
+            }
 
             var resKoord = await SupabaseClient.From<ParcaDelikKoordinati>().Get();
             parcaDelikKoordinatlari = resKoord.Models;
-
-            if (ilkKez)
-                await VeritabaniniKaydet();
         }
         catch (Exception ex)
         {
